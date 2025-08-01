@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.kotlinModule
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule
-import com.narvi.messagesystem.dto.Message
+import com.narvi.messagesystem.dto.domain.Message
 import com.narvi.messagesystem.entity.MessageEntity
 import com.narvi.messagesystem.repository.MessageRepository
 import com.narvi.messagesystem.session.WebSocketSessionManager

@@ -41,6 +41,13 @@ allOpen {
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-websocket")
 
+    implementation("org.springframework.boot:spring-boot-starter-security")
+    implementation("org.springframework.boot:spring-boot-starter-web")
+    // Redis
+    implementation("org.springframework.boot:spring-boot-starter-data-redis")
+    // Redis + Session
+    implementation("org.springframework.session:spring-session-data-redis")
+
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-hibernate6:2.15.0")
 
@@ -51,7 +58,6 @@ dependencies {
 
     // @ConfigurationProperties 사용
     kapt("org.springframework.boot:spring-boot-configuration-processor")
-
     runtimeOnly("com.mysql:mysql-connector-j")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
