@@ -1,14 +1,19 @@
 package com.narvi.messagesystem.handler
 
+import KeepAliveRequest
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.kotlinModule
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule
+import com.narvi.messagesystem.constant.Constants
 import com.narvi.messagesystem.dto.domain.Message
+import com.narvi.messagesystem.dto.websocket.inbound.BaseRequest
+import com.narvi.messagesystem.dto.websocket.inbound.MessageRequest
 import com.narvi.messagesystem.entity.MessageEntity
 import com.narvi.messagesystem.repository.MessageRepository
+import com.narvi.messagesystem.service.SessionService
 import com.narvi.messagesystem.session.WebSocketSessionManager
 import mu.KotlinLogging
 import org.springframework.stereotype.Component
@@ -22,6 +27,7 @@ import org.springframework.web.socket.handler.TextWebSocketHandler
 class MessageHandler(
     private val sessionManager: WebSocketSessionManager,
     private val messageRepository: MessageRepository,
+    private val sessionService: SessionService,
 ) : TextWebSocketHandler() {
 
     private val objectMapper = ObjectMapper().apply {
@@ -60,22 +66,33 @@ class MessageHandler(
     }
 
     override fun handleTextMessage(senderSession: WebSocketSession, message: TextMessage) {
-        log.info("Received TextMessage: [{}] from {}", message, senderSession.id)
-
         val payload = message.payload
+        log.info("Received TextMessage: [{}] from {}", payload, senderSession.id)
 
         try {
-            val receivedMessage = objectMapper.readValue(payload, Message::class.java)
-            messageRepository.save(
-                MessageEntity(
-                    userName = receivedMessage.username,
-                    content = receivedMessage.content
-                )
-            )
+            val baseRequest = objectMapper.readValue(payload, BaseRequest::class.java)
 
-            sessionManager.getSessions().forEach {  participantSession ->
-                if (senderSession.id != participantSession.id) {
-                    sendMessage(participantSession, receivedMessage)
+            if (baseRequest is MessageRequest) {
+                val receivedMessage = Message(
+                    username = baseRequest.username,
+                    content = baseRequest.content
+                )
+
+                messageRepository.save(
+                    MessageEntity(
+                        userName = receivedMessage.username,
+                        content = receivedMessage.content
+                    )
+                )
+
+                sessionManager.getSessions().forEach {  participantSession ->
+                    if (senderSession.id != participantSession.id) {
+                        sendMessage(participantSession, receivedMessage)
+                    }
+                }
+            } else if (baseRequest is KeepAliveRequest) {
+                (senderSession.attributes[Constants.HTTP_SESSION_ID.value] as? String)?.let {
+                    sessionService.refreshTTL(it)
                 }
             }
         } catch (e: Exception) {

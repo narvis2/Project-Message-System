@@ -21,6 +21,7 @@ import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.web.authentication.AbstractAuthenticationProcessingFilter
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository
 import org.springframework.security.web.util.matcher.RequestMatcher
+import java.util.*
 
 class RestApiLoginAuthFilter(
     requiresAuthenticationRequestMatcher: RequestMatcher,
@@ -67,10 +68,14 @@ class RestApiLoginAuthFilter(
         val contextRepository = HttpSessionSecurityContextRepository()
         contextRepository.saveContext(securityContext, request, response)
 
+        val sessionId = request.session.id
+        val encodedSessionId = Base64.getEncoder()
+            .encodeToString(sessionId.toByteArray(Charsets.UTF_8))
+
         response.apply {
             status = HttpServletResponse.SC_OK
             contentType = MediaType.TEXT_PLAIN_VALUE
-            writer.write(request.session.id)
+            writer.write(encodedSessionId)
             writer.flush()
         }
     }

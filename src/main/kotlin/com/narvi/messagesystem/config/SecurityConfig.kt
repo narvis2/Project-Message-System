@@ -52,7 +52,12 @@ class SecurityConfig {
             .httpBasic { it.disable() }
             .addFilterAt(restApiLoginAuthFilter, UsernamePasswordAuthenticationFilter::class.java)
             .authorizeHttpRequests { auth ->
-                auth.requestMatchers("/api/v1/auth/login", "/ws/v1/connect").permitAll().anyRequest().authenticated()
+                auth.requestMatchers(
+                    "/api/v1/auth/register",
+                    "/api/v1/auth/login",
+                ).permitAll()
+                    .anyRequest()
+                    .authenticated()
             }
             .logout {
                 it.logoutUrl("/api/v1/auth/logout").logoutSuccessHandler(this::logoutHandler)
