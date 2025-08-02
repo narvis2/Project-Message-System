@@ -1,6 +1,5 @@
 package com.narvi.messagesystem.dto.websocket.inbound
 
-import KeepAliveRequest
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.narvi.messagesystem.constant.MessageType
@@ -11,6 +10,6 @@ import com.narvi.messagesystem.constant.MessageType
     JsonSubTypes.Type(value = MessageRequest::class, name = MessageType.MESSAGE),
     JsonSubTypes.Type(value = KeepAliveRequest::class, name = MessageType.KEEP_ALIVE)
 )
-abstract class BaseRequest(
-    val type: String
+sealed class BaseRequest(
+    open val type: String
 )

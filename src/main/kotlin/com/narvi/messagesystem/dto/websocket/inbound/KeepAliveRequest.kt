@@ -1,5 +1,5 @@
-import com.fasterxml.jackson.annotation.JsonCreator
-import com.narvi.messagesystem.constant.MessageType
-import com.narvi.messagesystem.dto.websocket.inbound.BaseRequest
+package com.narvi.messagesystem.dto.websocket.inbound
 
-class KeepAliveRequest @JsonCreator constructor() : BaseRequest(MessageType.KEEP_ALIVE)
+import com.narvi.messagesystem.constant.MessageType
+
+data object KeepAliveRequest : BaseRequest(type = MessageType.KEEP_ALIVE)

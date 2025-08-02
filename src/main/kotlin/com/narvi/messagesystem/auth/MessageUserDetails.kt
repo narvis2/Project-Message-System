@@ -1,15 +1,17 @@
 package com.narvi.messagesystem.auth
 
 import com.fasterxml.jackson.annotation.JsonCreator
+import com.fasterxml.jackson.annotation.JsonIgnore
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.userdetails.UserDetails
 
-class MessageUserDetails @JsonCreator constructor(
+data class MessageUserDetails @JsonCreator constructor(
     private val userId: Long,
     private val username: String,
     private var password: String,
 ) : UserDetails {
 
+    @JsonIgnore // 이게 올바른 방법은 아닌데..
     override fun getAuthorities(): MutableCollection<out GrantedAuthority> = arrayListOf()
 
     override fun getPassword(): String = password

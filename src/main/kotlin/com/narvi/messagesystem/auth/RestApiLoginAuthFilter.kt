@@ -25,7 +25,7 @@ import java.util.*
 
 class RestApiLoginAuthFilter(
     requiresAuthenticationRequestMatcher: RequestMatcher,
-    authenticationManager: AuthenticationManager
+    authenticationManager: AuthenticationManager,
 ) : AbstractAuthenticationProcessingFilter(requiresAuthenticationRequestMatcher, authenticationManager) {
 
     private val objectMapper = ObjectMapper().apply {
@@ -72,12 +72,11 @@ class RestApiLoginAuthFilter(
         val encodedSessionId = Base64.getEncoder()
             .encodeToString(sessionId.toByteArray(Charsets.UTF_8))
 
-        response.apply {
-            status = HttpServletResponse.SC_OK
-            contentType = MediaType.TEXT_PLAIN_VALUE
-            writer.write(encodedSessionId)
-            writer.flush()
-        }
+        response.status = HttpServletResponse.SC_OK
+        response.contentType = MediaType.TEXT_PLAIN_VALUE
+        response.characterEncoding = "UTF-8"
+        response.writer.write(encodedSessionId)
+        response.writer.flush()
     }
 
     override fun unsuccessfulAuthentication(

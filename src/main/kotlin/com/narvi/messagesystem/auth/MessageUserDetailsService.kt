@@ -5,9 +5,10 @@ import mu.KotlinLogging
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.core.userdetails.UsernameNotFoundException
+import org.springframework.stereotype.Component
 import org.springframework.stereotype.Service
 
-@Service
+@Component
 class MessageUserDetailsService(
     private val messageUserRepository: MessageUserRepository,
 ) : UserDetailsService {

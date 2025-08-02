@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletResponse
 import mu.KotlinLogging
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.authentication.AuthenticationManager
@@ -18,7 +19,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher
 import java.io.IOException
 
 @Configuration
@@ -29,12 +30,13 @@ class SecurityConfig {
 
     @Bean
     fun authenticationManager(
-        detailsService: UserDetailsService,
+        messageUserDetailsService: UserDetailsService,
         passwordEncoder: PasswordEncoder
     ): AuthenticationManager {
-        val daoAuthenticationProvider = DaoAuthenticationProvider()
-        daoAuthenticationProvider.setUserDetailsService(detailsService)
-        daoAuthenticationProvider.setPasswordEncoder(passwordEncoder)
+        val daoAuthenticationProvider = DaoAuthenticationProvider(messageUserDetailsService).apply {
+            setPasswordEncoder(passwordEncoder)
+        }
+
         return ProviderManager(daoAuthenticationProvider)
     }
 
@@ -43,8 +45,12 @@ class SecurityConfig {
         httpSecurity: HttpSecurity,
         authenticationManager: AuthenticationManager
     ): SecurityFilterChain {
+        val loginRequestMatcher = PathPatternRequestMatcher
+            .withDefaults()
+            .matcher(HttpMethod.POST, "/api/v1/auth/login")
+
         val restApiLoginAuthFilter = RestApiLoginAuthFilter(
-            AntPathRequestMatcher("/api/v1/auth/login", "POST"), authenticationManager
+            loginRequestMatcher, authenticationManager
         )
 
         httpSecurity.csrf { it.disable() }
@@ -55,9 +61,7 @@ class SecurityConfig {
                 auth.requestMatchers(
                     "/api/v1/auth/register",
                     "/api/v1/auth/login",
-                ).permitAll()
-                    .anyRequest()
-                    .authenticated()
+                ).permitAll().anyRequest().authenticated()
             }
             .logout {
                 it.logoutUrl("/api/v1/auth/logout").logoutSuccessHandler(this::logoutHandler)

@@ -27,21 +27,21 @@ class RedisSessionConfig {
 
     @Bean
     fun springSessionDefaultRedisSerializer(): RedisSerializer<Any> {
-        val objectMapper = ObjectMapper().apply {
-            registerModule(JavaTimeModule())
-            registerModules(kotlinModule())
-            registerModule(ParameterNamesModule())
-            registerModules(SecurityJackson2Modules.getModules(this.javaClass.classLoader))
-            activateDefaultTyping(
-                BasicPolymorphicTypeValidator.builder()
-                    .allowIfSubType(Any::class.java)
-                    .build(),
-                ObjectMapper.DefaultTyping.NON_FINAL,
-            )
-                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-        }
+//        val objectMapper = ObjectMapper().apply {
+//            registerModule(JavaTimeModule())
+//            registerModules(kotlinModule())
+//            registerModule(ParameterNamesModule())
+//            registerModules(SecurityJackson2Modules.getModules(this.javaClass.classLoader))
+//            activateDefaultTyping(
+//                BasicPolymorphicTypeValidator.builder()
+//                    .allowIfSubType(Any::class.java)
+//                    .build(),
+//                ObjectMapper.DefaultTyping.NON_FINAL,
+//            )
+//                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+//        }
 
-        return GenericJackson2JsonRedisSerializer(objectMapper)
+        return GenericJackson2JsonRedisSerializer(redisCacheObjectMapper())
     }
 
     private fun redisCacheObjectMapper(): ObjectMapper {

@@ -1,6 +1,5 @@
 package com.narvi.messagesystem.handler
 
-import KeepAliveRequest
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator
@@ -10,12 +9,14 @@ import com.fasterxml.jackson.module.paramnames.ParameterNamesModule
 import com.narvi.messagesystem.constant.Constants
 import com.narvi.messagesystem.dto.domain.Message
 import com.narvi.messagesystem.dto.websocket.inbound.BaseRequest
+import com.narvi.messagesystem.dto.websocket.inbound.KeepAliveRequest
 import com.narvi.messagesystem.dto.websocket.inbound.MessageRequest
 import com.narvi.messagesystem.entity.MessageEntity
 import com.narvi.messagesystem.repository.MessageRepository
 import com.narvi.messagesystem.service.SessionService
 import com.narvi.messagesystem.session.WebSocketSessionManager
 import mu.KotlinLogging
+import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Component
 import org.springframework.web.socket.CloseStatus
 import org.springframework.web.socket.TextMessage
@@ -52,6 +53,7 @@ class MessageHandler(
             5000,
             100 * 1024
         )
+
         sessionManager.storeSession(concurrentWebSocketSessionDecorator)
     }
 
@@ -72,29 +74,33 @@ class MessageHandler(
         try {
             val baseRequest = objectMapper.readValue(payload, BaseRequest::class.java)
 
-            if (baseRequest is MessageRequest) {
-                val receivedMessage = Message(
-                    username = baseRequest.username,
-                    content = baseRequest.content
-                )
-
-                messageRepository.save(
-                    MessageEntity(
-                        userName = receivedMessage.username,
-                        content = receivedMessage.content
-                    )
-                )
-
-                sessionManager.getSessions().forEach {  participantSession ->
-                    if (senderSession.id != participantSession.id) {
-                        sendMessage(participantSession, receivedMessage)
+            when (baseRequest) {
+                is KeepAliveRequest -> {
+                    (senderSession.attributes[Constants.HTTP_SESSION_ID.value] as? String)?.let {
+                        sessionService.refreshTTL(it)
                     }
                 }
-            } else if (baseRequest is KeepAliveRequest) {
-                (senderSession.attributes[Constants.HTTP_SESSION_ID.value] as? String)?.let {
-                    sessionService.refreshTTL(it)
+                is MessageRequest -> {
+                    val receivedMessage = Message(
+                        username = baseRequest.username,
+                        content = baseRequest.content
+                    )
+
+                    messageRepository.save(
+                        MessageEntity(
+                            userName = receivedMessage.username,
+                            content = receivedMessage.content
+                        )
+                    )
+
+                    sessionManager.getSessions().forEach {  participantSession ->
+                        if (senderSession.id != participantSession.id) {
+                            sendMessage(participantSession, receivedMessage)
+                        }
+                    }
                 }
             }
+
         } catch (e: Exception) {
             val errorMsg = "유효한 프로토콜이 아닙니다."
             log.error("errorMessage payload: {}", payload, senderSession.id)
