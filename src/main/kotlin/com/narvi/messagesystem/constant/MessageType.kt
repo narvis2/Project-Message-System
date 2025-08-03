@@ -2,7 +2,26 @@ package com.narvi.messagesystem.constant
 
 class MessageType {
     companion object {
-        const val MESSAGE = "MESSAGE"
+        // 서버에 요청이 들어오면 응답을 주는 것들
+        const val FETCH_USER_INVITECODE_REQUEST = "FETCH_USER_INVITECODE_REQUEST"
+        const val FETCH_USER_INVITECODE_RESPONSE = "FETCH_USER_INVITECODE_RESPONSE"
+        const val FETCH_CONNECTIONS_REQUEST = "FETCH_CONNECTIONS_REQUEST"
+        const val FETCH_CONNECTIONS_RESPONSE = "FETCH_CONNECTIONS_RESPONSE"
+        const val INVITE_REQUEST = "INVITE_REQUEST"
+        const val INVITE_RESPONSE = "INVITE_RESPONSE"
+        const val ACCEPT_REQUEST = "ACCEPT_REQUEST"
+        const val ACCEPT_RESPONSE = "ACCEPT_RESPONSE"
+        const val REJECT_REQUEST = "REJECT_REQUEST"
+        const val REJECT_RESPONSE = "REJECT_RESPONSE"
+        const val DISCONNECT_REQUEST = "DISCONNECT_REQUEST"
+        const val DISCONNECT_RESPONSE = "DISCONNECT_RESPONSE"
+        const val WRITE_MESSAGE = "WRITE_MESSAGE"
+
+        // 단방향
+        const val ASK_INVITE = "ASK_INVITE"
+        const val NOTIFY_MESSAGE = "NOTIFY_MESSAGE"
+        const val NOTIFY_ACCEPT = "NOTIFY_ACCEPT"
         const val KEEP_ALIVE = "KEEP_ALIVE"
+        const val ERROR = "ERROR"
     }
 }

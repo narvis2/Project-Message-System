@@ -1,23 +1,23 @@
 package com.narvi.messagesystem.auth
 
-import com.narvi.messagesystem.repository.MessageUserRepository
+import com.narvi.messagesystem.repository.UserRepository
 import mu.KotlinLogging
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.core.userdetails.UsernameNotFoundException
 import org.springframework.stereotype.Component
-import org.springframework.stereotype.Service
 
 @Component
 class MessageUserDetailsService(
-    private val messageUserRepository: MessageUserRepository,
+    private val userRepository: UserRepository,
 ) : UserDetailsService {
 
     override fun loadUserByUsername(username: String?): UserDetails {
         val name = username ?: throw UsernameNotFoundException("")
-        val messageUserEntity = messageUserRepository.findByUsername(name).orElseThrow {
+        val messageUserEntity = userRepository.findByUsername(name)
+        if (messageUserEntity == null) {
             log.info("User {} not found", name)
-            UsernameNotFoundException("")
+            throw UsernameNotFoundException("")
         }
 
         val userId = messageUserEntity.userId ?: throw UsernameNotFoundException("")

@@ -4,12 +4,17 @@ import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.narvi.messagesystem.constant.MessageType
 
-// TODO:: Sealed Class 로 변경 고민해보기
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 @JsonSubTypes(
-    JsonSubTypes.Type(value = MessageRequest::class, name = MessageType.MESSAGE),
-    JsonSubTypes.Type(value = KeepAliveRequest::class, name = MessageType.KEEP_ALIVE)
+    JsonSubTypes.Type(value = WriteMessageRequest::class, name = MessageType.WRITE_MESSAGE),
+    JsonSubTypes.Type(value = InviteRequest::class, name = MessageType.INVITE_REQUEST),
+    JsonSubTypes.Type(value = FetchUserInviteCodeRequest::class, name = MessageType.FETCH_USER_INVITECODE_REQUEST),
+    JsonSubTypes.Type(value = FetchConnectionsRequest::class, name = MessageType.FETCH_CONNECTIONS_REQUEST),
+    JsonSubTypes.Type(value = RejectRequest::class, name = MessageType.REJECT_REQUEST),
+    JsonSubTypes.Type(value = KeepAliveRequest::class, name = MessageType.KEEP_ALIVE),
+    JsonSubTypes.Type(value = AcceptRequest::class, name = MessageType.ACCEPT_REQUEST),
+    JsonSubTypes.Type(value = DisconnectRequest::class, name = MessageType.DISCONNECT_REQUEST),
 )
 sealed class BaseRequest(
-    open val type: String
+    val type: String
 )
