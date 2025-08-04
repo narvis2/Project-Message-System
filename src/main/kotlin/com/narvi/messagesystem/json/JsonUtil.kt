@@ -15,13 +15,7 @@ class JsonUtil {
         registerModules(JavaTimeModule())
         registerModules(kotlinModule())
         registerModule(ParameterNamesModule())
-        activateDefaultTyping(
-            BasicPolymorphicTypeValidator.builder()
-                .allowIfSubType(Any::class.java)
-                .build(),
-            ObjectMapper.DefaultTyping.NON_FINAL,
-        )
-            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+        .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
     }
 
     fun <T> fromJson(json: String, clazz: Class<T>): T? = runCatching {

@@ -2,13 +2,14 @@ package com.narvi.messagesystem.auth
 
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonProperty
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.userdetails.UserDetails
 
 data class MessageUserDetails @JsonCreator constructor(
-    private val userId: Long,
-    private val username: String,
-    private var password: String,
+    @param:JsonProperty("userId") val userId: Long,
+    @param:JsonProperty("username") private val username: String,
+    @param:JsonProperty("password") private var password: String
 ) : UserDetails {
 
     @JsonIgnore // 이게 올바른 방법은 아닌데..
@@ -30,9 +31,6 @@ data class MessageUserDetails @JsonCreator constructor(
     override fun hashCode(): Int {
         return username.hashCode()
     }
-
-    val getUserId
-        get() = userId
 
     fun erasePassword() {
         password = ""

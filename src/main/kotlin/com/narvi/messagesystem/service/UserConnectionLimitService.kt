@@ -7,7 +7,6 @@ import com.narvi.messagesystem.repository.UserRepository
 import jakarta.persistence.EntityNotFoundException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import sun.security.krb5.KrbException.errorMessage
 
 @Service
 class UserConnectionLimitService(

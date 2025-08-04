@@ -1,9 +1,10 @@
 package com.narvi.messagesystem.entity
 
+import jakarta.persistence.Embeddable
 import java.io.Serializable
 
+@Embeddable
 data class UserConnectionId(
-    private val partnerAUserId: Long,
-    private val partnerBUserId: Long,
-) : Serializable {
-}
+    val partnerAUserId: Long,
+    val partnerBUserId: Long,
+) : Serializable

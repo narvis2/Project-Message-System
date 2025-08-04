@@ -32,7 +32,7 @@ interface UserConnectionRepository : JpaRepository<UserConnectionEntity, UserCon
 
     @Query(
         """
-        SELECT u.partnerBUserId AS userId, userB.username AS username
+        SELECT u.partnerBUserId AS userId, userB.username AS username, u.inviterUserId AS inviterUserId
         FROM UserConnectionEntity u
         INNER JOIN UserEntity userB ON u.partnerBUserId = userB.userId
         WHERE u.partnerAUserId = :userId AND u.status = :status
@@ -45,7 +45,7 @@ interface UserConnectionRepository : JpaRepository<UserConnectionEntity, UserCon
 
     @Query(
         """
-        SELECT u.partnerAUserId AS userId, userA.username AS username
+        SELECT u.partnerAUserId AS userId, userA.username AS username, u.inviterUserId AS inviterUserId
         FROM UserConnectionEntity u
         INNER JOIN UserEntity userA ON u.partnerAUserId = userA.userId
         WHERE u.partnerBUserId = :userId AND u.status = :status

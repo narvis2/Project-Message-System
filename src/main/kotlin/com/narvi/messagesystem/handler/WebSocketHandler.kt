@@ -3,7 +3,7 @@ package com.narvi.messagesystem.handler
 import com.narvi.messagesystem.constant.Constants
 import com.narvi.messagesystem.dto.domain.UserId
 import com.narvi.messagesystem.dto.websocket.inbound.BaseRequest
-import com.narvi.messagesystem.handler.websocket.RequestHandlerDispatcher
+import com.narvi.messagesystem.handler.websocket.RequestDispatcher
 import com.narvi.messagesystem.json.JsonUtil
 import com.narvi.messagesystem.session.WebSocketSessionManager
 import mu.KotlinLogging
@@ -16,7 +16,7 @@ import org.springframework.web.socket.handler.TextWebSocketHandler
 
 @Component
 class WebSocketHandler(
-    private val requestHandlerDispatcher: RequestHandlerDispatcher,
+    private val requestDispatcher: RequestDispatcher,
     private val webSocketSessionManager: WebSocketSessionManager,
     private val jsonUtil: JsonUtil,
 ) : TextWebSocketHandler() {
@@ -51,7 +51,7 @@ class WebSocketHandler(
         log.info("Received TextMessage: [{}] from {}", payload, senderSession.id)
 
         jsonUtil.fromJson(payload, BaseRequest::class.java)?.let {
-            requestHandlerDispatcher.dispatchRequest(senderSession, it)
+            requestDispatcher.dispatchRequest(senderSession, it)
         }
     }
 

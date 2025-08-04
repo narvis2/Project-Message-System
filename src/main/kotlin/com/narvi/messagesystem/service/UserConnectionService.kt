@@ -21,8 +21,17 @@ class UserConnectionService(
         val usersA = userConnectionRepository.findByPartnerAUserIdAndStatus(userId.id, status)
         val usersB = userConnectionRepository.findByPartnerBUserIdAndStatus(userId.id, status)
 
-        return (usersA + usersB)
-            .map { User(UserId(it.userId), it.username) }
+        // Pending 일때 요청 받은 사람만 Pending List 를 볼 수 있도록 수정
+        return if (status == UserConnectionStatus.ACCEPTED) {
+            (usersA + usersB)
+                .map { User(UserId(it.userId), it.username) }
+        } else {
+            (usersA + usersB)
+                .filter { item ->
+                    item.inviterUserId != userId.id
+                }
+                .map { User(UserId(it.userId), it.username) }
+        }
     }
 
     // return 초대코드의 userId to 받을 사람에게 누가 당신을 초대했는지 이름

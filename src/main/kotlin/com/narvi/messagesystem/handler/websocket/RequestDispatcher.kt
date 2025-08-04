@@ -9,7 +9,7 @@ import org.springframework.web.socket.WebSocketSession
 import java.lang.reflect.ParameterizedType
 
 @Component
-class RequestHandlerDispatcher(
+class RequestDispatcher(
     private val listableBeanFactory: ListableBeanFactory
 ) {
     private val handlerMap: MutableMap<Class<out BaseRequest>, BaseRequestHandler<out BaseRequest>> = mutableMapOf()
