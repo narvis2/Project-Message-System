@@ -4,6 +4,7 @@ import com.narvi.messagesystem.constant.ResultType
 import com.narvi.messagesystem.constant.UserConnectionStatus
 import com.narvi.messagesystem.dto.domain.Channel
 import com.narvi.messagesystem.dto.domain.ChannelId
+import com.narvi.messagesystem.dto.domain.InviteCode
 import com.narvi.messagesystem.dto.domain.UserId
 import com.narvi.messagesystem.entity.ChannelEntity
 import com.narvi.messagesystem.entity.UserChannelEntity
@@ -21,54 +22,71 @@ class ChannelService(
     private val userConnectionService: UserConnectionService,
 ) {
 
+    fun getInviteCode(channelId: ChannelId): InviteCode? =
+        channelRepository.findChannelInviteCodeByChannelId(channelId.id)?.let {
+            InviteCode(it.inviteCode)
+        } ?: run {
+            log.warn("Invite code is not exist. channelId: {}", channelId)
+            null
+        }
+
     fun isJoined(channelId: ChannelId, userId: UserId): Boolean =
         userChannelRepository.existsByUserIdAndChannelId(userId.id, channelId.id)
 
-    fun getParticipantIds(channelId: ChannelId): List<UserId> =
-        userChannelRepository.findUserIdsByChannelId(
-            channelId.id
-        ).map { userId ->
-            UserId(userId.userId)
-        }
+    fun getParticipantIds(channelId: ChannelId): List<UserId> = userChannelRepository.findUserIdsByChannelId(
+        channelId.id
+    ).map { userId ->
+        UserId(userId.userId)
+    }
 
-    fun isOnline(userId: UserId, channelId: ChannelId): Boolean = sessionService.isOnline(userId, channelId)
+    fun getOnlineParticipantIds(channelId: ChannelId): List<UserId> =
+        sessionService.getOnlineParticipantUserIds(channelId, getParticipantIds(channelId))
 
     @Transactional
-    fun create(senderUserId: UserId, participantId: UserId, title: String): Pair<Channel?, ResultType> {
+    fun create(senderUserId: UserId, participantIds: List<UserId>, title: String): Pair<Channel?, ResultType> {
         if (title.isNullOrBlank()) {
             log.warn("Invalid args : title is empty.")
             return null to ResultType.INVALID_ARGS
         }
 
-        if (userConnectionService.getStatus(senderUserId, participantId) != UserConnectionStatus.ACCEPTED) {
-            log.warn("Included unconnected user. participantId: {}", participantId)
+        // 여기서 + 1는 본인 (본인은 빠져있음)
+        val headCount = participantIds.size + 1
+        if (headCount > LIMIT_HEAD_COUNT) {
+            log.warn(
+                "Over limit channel. senderUserId: {}, participantIds count={}, title={}",
+                senderUserId,
+                participantIds.size,
+                title
+            )
+            return null to ResultType.OVER_LIMIT
+        }
+
+        if (userConnectionService.countConnectionStatus(
+                senderUserId, participantIds, UserConnectionStatus.ACCEPTED
+            ) != participantIds.size.toLong()
+        ) {
+            log.warn("Included unconnected user. participantIds: {}", participantIds)
             return null to ResultType.NOT_ALLOWED
         }
 
         return try {
-            val HEAD_COUNT = 2
             val channelEntity = channelRepository.save(
                 ChannelEntity(
-                    title = title,
-                    headCount = HEAD_COUNT
+                    title = title, headCount = headCount
                 )
             )
             val channelId = channelEntity.channelId ?: throw IllegalStateException("Channel ID is null after save.")
-            val userChannelEntities = listOf(
-                UserChannelEntity(
-                    userId = senderUserId.id,
-                    channelId = channelId,
-                    lastReadMsgSeq = 0
-                ),
-                UserChannelEntity(
-                    userId = participantId.id,
-                    channelId = channelId,
-                    lastReadMsgSeq = 0
-                )
-            )
-            userChannelRepository.saveAll(userChannelEntities)
 
-            Channel(ChannelId(id = channelId), title, HEAD_COUNT) to ResultType.SUCCESS
+            val userChannelEntities = participantIds.map { participantId ->
+                UserChannelEntity(
+                    userId = participantId.id, channelId = channelId, lastReadMsgSeq = 0
+                )
+            }.toMutableList().apply {
+                add(UserChannelEntity(userId = senderUserId.id, channelId = channelId, lastReadMsgSeq = 0))
+            }
+
+            userChannelRepository.saveAll(userChannelEntities)
+            Channel(ChannelId(id = channelId), title, headCount) to ResultType.SUCCESS
         } catch (ex: Exception) {
             log.error("Create failed. cause: {}", ex.message)
             throw ex
@@ -96,6 +114,7 @@ class ChannelService(
     }
 
     companion object {
+        private const val LIMIT_HEAD_COUNT = 100
         private val log = KotlinLogging.logger {}
     }
 }

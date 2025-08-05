@@ -12,8 +12,8 @@ class ChannelEntity(
     var channelId: Long? = null,
     @Column(name = "title", nullable = false)
     var title: String,
-    @Column(name = "channel_invite_code", nullable = false)
-    var channelInviteCode: String = UUID.randomUUID().toString().replace("-", ""),
+    @Column(name = "invite_code", nullable = false)
+    var inviteCode: String = UUID.randomUUID().toString().replace("-", ""),
     @Column(name = "head_count", nullable = false)
     var headCount: Int = 0,
 ) : BaseTimeEntity() {

@@ -16,6 +16,7 @@ import com.narvi.messagesystem.constant.MessageType
     JsonSubTypes.Type(value = DisconnectRequest::class, name = MessageType.DISCONNECT_REQUEST),
     JsonSubTypes.Type(value = CreateRequest::class, name = MessageType.CREATE_REQUEST),
     JsonSubTypes.Type(value = EnterRequest::class, name = MessageType.ENTER_REQUEST),
+    JsonSubTypes.Type(value = FetchChannelInviteCodeRequest::class, name = MessageType.FETCH_CHANNEL_INVITECODE_REQUEST),
 )
 sealed class BaseRequest(
     val type: String

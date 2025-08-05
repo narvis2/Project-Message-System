@@ -17,18 +17,28 @@ interface UserConnectionRepository : JpaRepository<UserConnectionEntity, UserCon
         partnerBUserId: Long
     ): UserConnectionStatusProjection?
 
-
     fun findByPartnerAUserIdAndPartnerBUserIdAndStatus(
         partnerAUserId: Long,
         partnerBUserId: Long,
         status: UserConnectionStatus
     ): UserConnectionEntity?
 
-
     fun findInviterUserIdByPartnerAUserIdAndPartnerBUserId(
         partnerAUserId: Long,
         partnerBUserId: Long
     ): InviterUserIdProjection?
+
+    fun countByPartnerAUserIdAndPartnerBUserIdInAndStatus(
+        partnerAUserId: Long,
+        partnerBUserIds: Collection<Long>,
+        status: UserConnectionStatus
+    ): Long
+
+    fun countByPartnerBUserIdAndPartnerAUserIdInAndStatus(
+        partnerBUserId: Long,
+        partnerAUserIds: Collection<Long>,
+        status: UserConnectionStatus
+    ): Long
 
     @Query(
         """

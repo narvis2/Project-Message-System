@@ -22,18 +22,27 @@ class SessionService(
 
     fun getUsername(): String = SecurityContextHolder.getContext().authentication.name
 
-    fun isOnline(userId: UserId, channelId: ChannelId): Boolean {
-        val channelIdKey = buildChannelIdKey(userId)
+    fun getOnlineParticipantUserIds(channelId: ChannelId, userIds: List<UserId>): List<UserId> {
+        val channelIdKeys = userIds.map(::buildChannelIdKey)
         try {
-            val chId = stringRedisTemplate.opsForValue()[channelIdKey]
-            if (!chId.isNullOrBlank() && chId == channelId.id.toString()) {
-                return true
+            val channelIds = stringRedisTemplate.opsForValue().multiGet(channelIdKeys)
+            if (channelIds != null) {
+                val onlineParticipantUserIds: MutableList<UserId> = ArrayList(userIds.size)
+                val chId: String = channelId.id.toString()
+                for (idx in userIds.indices) {
+                    val value = channelIds[idx]
+                    if (value != null && value == chId) {
+                        onlineParticipantUserIds.add(userIds[idx])
+                    }
+                }
+
+                return onlineParticipantUserIds
             }
         } catch (ex: Exception) {
-            log.error("Redis get failed. key: {}, cause: {}", channelIdKey, ex.message)
+            log.error("Redis mget failed. key: {}, cause: {}", channelIdKeys, ex.message)
         }
 
-        return false
+        return emptyList()
     }
 
     fun setActiveChannel(userId: UserId, channelId: ChannelId): Boolean {
