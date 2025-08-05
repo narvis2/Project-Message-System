@@ -18,10 +18,23 @@ class SessionService(
     private val stringRedisTemplate: StringRedisTemplate,
 ) {
 
-    private val NAMESPACE = "message:user"
     private val TTL: Long = 300
 
     fun getUsername(): String = SecurityContextHolder.getContext().authentication.name
+
+    fun isOnline(userId: UserId, channelId: ChannelId): Boolean {
+        val channelIdKey = buildChannelIdKey(userId)
+        try {
+            val chId = stringRedisTemplate.opsForValue()[channelIdKey]
+            if (!chId.isNullOrBlank() && chId == channelId.id.toString()) {
+                return true
+            }
+        } catch (ex: Exception) {
+            log.error("Redis get failed. key: {}, cause: {}", channelIdKey, ex.message)
+        }
+
+        return false
+    }
 
     fun setActiveChannel(userId: UserId, channelId: ChannelId): Boolean {
         val channelIdKey = buildChannelIdKey(userId)
@@ -49,8 +62,10 @@ class SessionService(
         }
     }
 
-    private fun buildChannelIdKey(userId: UserId): String =
-        "%s:%d:%s".format(NAMESPACE, userId.id, IdKey.CHANNEL_ID.value)
+    private fun buildChannelIdKey(userId: UserId): String {
+        val NAMESPACE = "message:user"
+        return "%s:%d:%s".format(NAMESPACE, userId.id, IdKey.CHANNEL_ID.value)
+    }
 
     companion object {
         private val log = KotlinLogging.logger {}

@@ -22,6 +22,15 @@ class ChannelService(
     fun isJoined(channelId: ChannelId, userId: UserId): Boolean =
         userChannelRepository.existsByUserIdAndChannelId(userId.id, channelId.id)
 
+    fun getParticipantIds(channelId: ChannelId): List<UserId> =
+        userChannelRepository.findUserIdsByChannelId(
+            channelId.id
+        ).map { userId ->
+            UserId(userId.userId)
+        }
+
+    fun isOnline(userId: UserId, channelId: ChannelId): Boolean = sessionService.isOnline(userId, channelId)
+
     @Transactional
     fun create(senderUserId: UserId, participantId: UserId, title: String): Pair<Channel?, ResultType> {
         if (title.isNullOrBlank()) {
