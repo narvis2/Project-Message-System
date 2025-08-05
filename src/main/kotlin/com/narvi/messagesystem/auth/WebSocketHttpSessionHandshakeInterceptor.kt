@@ -1,9 +1,8 @@
 package com.narvi.messagesystem.auth
 
-import com.narvi.messagesystem.constant.Constants
+import com.narvi.messagesystem.constant.IdKey
 import com.narvi.messagesystem.dto.domain.UserId
 import mu.KotlinLogging
-import org.springframework.data.jpa.domain.AbstractPersistable_.id
 import org.springframework.http.HttpStatus
 import org.springframework.http.server.ServerHttpRequest
 import org.springframework.http.server.ServerHttpResponse
@@ -46,9 +45,9 @@ class WebSocketHttpSessionHandshakeInterceptor : HttpSessionHandshakeInterceptor
         }
 
         val userId = (authentication.principal as MessageUserDetails).userId
-        attributes[Constants.HTTP_SESSION_ID.value] = httpSession.id
+        attributes[IdKey.HTTP_SESSION_ID.value] = httpSession.id
         log.info("getUserId 👉 $userId")
-        attributes[Constants.USER_ID.value] = UserId(userId)
+        attributes[IdKey.USER_ID.value] = UserId(userId)
         return true
     }
 

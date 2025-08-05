@@ -1,6 +1,6 @@
 package com.narvi.messagesystem.handler.websocket
 
-import com.narvi.messagesystem.constant.Constants
+import com.narvi.messagesystem.constant.IdKey
 import com.narvi.messagesystem.dto.domain.Connection
 import com.narvi.messagesystem.dto.domain.UserId
 import com.narvi.messagesystem.dto.websocket.inbound.FetchConnectionsRequest
@@ -16,7 +16,7 @@ class FetchConnectionsRequestHandler(
     private val userConnectionService: UserConnectionService,
 ) : BaseRequestHandler<FetchConnectionsRequest> {
     override fun handleRequest(senderSession: WebSocketSession, request: FetchConnectionsRequest) {
-        val senderUserId = senderSession.attributes[Constants.USER_ID.value] as UserId
+        val senderUserId = senderSession.attributes[IdKey.USER_ID.value] as UserId
 
         val connections = userConnectionService.getUsersByStatus(senderUserId, request.status).map { user ->
             Connection(user.username, request.status)

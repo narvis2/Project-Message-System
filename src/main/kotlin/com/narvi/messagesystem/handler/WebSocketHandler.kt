@@ -1,6 +1,6 @@
 package com.narvi.messagesystem.handler
 
-import com.narvi.messagesystem.constant.Constants
+import com.narvi.messagesystem.constant.IdKey
 import com.narvi.messagesystem.dto.domain.UserId
 import com.narvi.messagesystem.dto.websocket.inbound.BaseRequest
 import com.narvi.messagesystem.handler.websocket.RequestDispatcher
@@ -31,18 +31,18 @@ class WebSocketHandler(
             100 * 1024
         )
 
-        val userId = session.attributes[Constants.USER_ID.value] as? UserId ?: return
+        val userId = session.attributes[IdKey.USER_ID.value] as? UserId ?: return
         webSocketSessionManager.putSession(userId, concurrentWebSocketSessionDecorator)
     }
 
     override fun handleTransportError(session: WebSocketSession, exception: Throwable) {
         log.error("Transport Error : [{}] from {}", exception.message, session.id)
-        val userId = session.attributes[Constants.USER_ID.value] as? UserId ?: return
+        val userId = session.attributes[IdKey.USER_ID.value] as? UserId ?: return
         webSocketSessionManager.closeSession(userId)
     }
 
     override fun afterConnectionClosed(session: WebSocketSession, status: CloseStatus) {
-        val userId = session.attributes[Constants.USER_ID.value] as? UserId ?: return
+        val userId = session.attributes[IdKey.USER_ID.value] as? UserId ?: return
         webSocketSessionManager.closeSession(userId)
     }
 
