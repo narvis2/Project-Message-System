@@ -23,24 +23,29 @@ class UserConnectionService(
 
         // Pending 일때 요청 받은 사람만 Pending List 를 볼 수 있도록 수정
         return if (status == UserConnectionStatus.ACCEPTED) {
-            (usersA + usersB)
-                .map { User(UserId(it.userId), it.username) }
+            (usersA + usersB).map { User(UserId(it.userId), it.username) }
         } else {
-            (usersA + usersB)
-                .filter { item ->
+            (usersA + usersB).filter { item ->
                     item.inviterUserId != userId.id
-                }
-                .map { User(UserId(it.userId), it.username) }
+                }.map { User(UserId(it.userId), it.username) }
         }
     }
 
     fun getStatus(
-        inviterUserId: UserId,
-        partnerUserId: UserId
+        inviterUserId: UserId, partnerUserId: UserId
     ): UserConnectionStatus = userConnectionRepository.findUserConnectionStatusByPartnerAUserIdAndPartnerBUserId(
         minOf(inviterUserId.id, partnerUserId.id),
         maxOf(inviterUserId.id, partnerUserId.id),
     )?.status?.let(UserConnectionStatus::valueOf) ?: UserConnectionStatus.NONE
+
+    fun countConnectionStatus(senderUserId: UserId, partnerIds: List<UserId>, status: UserConnectionStatus): Long {
+        val ids = partnerIds.map { it.id }
+        return userConnectionRepository.countByPartnerAUserIdAndPartnerBUserIdInAndStatus(
+            senderUserId.id,
+            ids,
+            status
+        ) + userConnectionRepository.countByPartnerAUserIdAndPartnerBUserIdInAndStatus(senderUserId.id, ids, status)
+    }
 
     // return 초대코드의 userId to 받을 사람에게 누가 당신을 초대했는지 이름
     fun invite(inviterUserId: UserId, inviteCode: InviteCode): Pair<UserId?, String> {
@@ -156,9 +161,10 @@ class UserConnectionService(
                 return true to partnerUsername
             }
 
-            if (
-                status == UserConnectionStatus.REJECTED &&
-                getInviterUserId(senderUserId, partnerUserId) == partnerUserId
+            if (status == UserConnectionStatus.REJECTED && getInviterUserId(
+                    senderUserId,
+                    partnerUserId
+                ) == partnerUserId
             ) {
                 setStatus(senderUserId, partnerUserId, UserConnectionStatus.DISCONNECTED)
                 true to partnerUsername
@@ -179,9 +185,7 @@ class UserConnectionService(
 
     @Transactional
     fun setStatus(
-        inviterUserId: UserId,
-        partnerUserId: UserId,
-        status: UserConnectionStatus
+        inviterUserId: UserId, partnerUserId: UserId, status: UserConnectionStatus
     ) {
         if (status == UserConnectionStatus.ACCEPTED) {
             throw IllegalArgumentException("Can't set to accepted.")

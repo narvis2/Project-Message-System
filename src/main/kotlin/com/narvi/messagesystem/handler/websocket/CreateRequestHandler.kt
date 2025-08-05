@@ -13,6 +13,7 @@ import com.narvi.messagesystem.service.UserService
 import com.narvi.messagesystem.session.WebSocketSessionManager
 import org.springframework.stereotype.Component
 import org.springframework.web.socket.WebSocketSession
+import java.util.concurrent.CompletableFuture
 
 @Component
 class CreateRequestHandler(
@@ -24,21 +25,19 @@ class CreateRequestHandler(
     override fun handleRequest(senderSession: WebSocketSession, request: CreateRequest) {
         val senderUserId = senderSession.attributes[IdKey.USER_ID.value] as UserId
 
-        val participantId = userService.getUserId(request.participantUsername)
-        if (participantId == null) {
+        val participantIds = userService.getUserIds(request.participantUsernames)
+        if (participantIds.isEmpty()) {
             webSocketSessionManager.sendMessage(
-                senderSession,
-                ErrorResponse(MessageType.CREATE_REQUEST, ResultType.NOT_FOUND.message)
+                senderSession, ErrorResponse(MessageType.CREATE_REQUEST, ResultType.NOT_FOUND.message)
             )
             return
         }
 
         val result = try {
-            channelService.create(senderUserId, participantId, request.title)
+            channelService.create(senderUserId, participantIds, request.title)
         } catch (e: Exception) {
             webSocketSessionManager.sendMessage(
-                senderSession,
-                ErrorResponse(MessageType.CREATE_REQUEST, ResultType.FAILED.message)
+                senderSession, ErrorResponse(MessageType.CREATE_REQUEST, ResultType.FAILED.message)
             )
             return
         }
@@ -46,18 +45,23 @@ class CreateRequestHandler(
         val channel = result.first
         if (channel == null) {
             webSocketSessionManager.sendMessage(
-                senderSession,
-                ErrorResponse(MessageType.CREATE_REQUEST, result.second.message)
+                senderSession, ErrorResponse(MessageType.CREATE_REQUEST, result.second.message)
             )
             return
         }
 
         webSocketSessionManager.sendMessage(senderSession, CreateResponse(channel.channelId, channel.title))
-        webSocketSessionManager.getSession(participantId)?.let {
-            webSocketSessionManager.sendMessage(
-                it,
-                JoinNotification(channelId = channel.channelId, title = channel.title)
-            )
+
+        participantIds.forEach { participantId ->
+            CompletableFuture.runAsync {
+                webSocketSessionManager.getSession(participantId)?.let { participantSession ->
+                    webSocketSessionManager.sendMessage(
+                        participantSession, JoinNotification(
+                            channelId = channel.channelId, title = channel.title
+                        )
+                    )
+                }
+            }
         }
     }
 }

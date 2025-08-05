@@ -14,8 +14,8 @@ class UserEntity(
     var username: String,
     @Column(name = "password", nullable = false)
     var password: String,
-    @Column(name = "connection_invite_code", nullable = false)
-    var connectionInviteCode: String = UUID.randomUUID().toString().replace("-", ""),
+    @Column(name = "invite_code", nullable = false)
+    var inviteCode: String = UUID.randomUUID().toString().replace("-", ""),
     @Column(name = "connection_count", nullable = false)
     var connectionCount: Int,
 ) : BaseTimeEntity() {

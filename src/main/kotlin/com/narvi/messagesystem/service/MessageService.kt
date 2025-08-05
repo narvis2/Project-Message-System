@@ -6,6 +6,9 @@ import com.narvi.messagesystem.entity.MessageEntity
 import com.narvi.messagesystem.repository.MessageRepository
 import mu.KotlinLogging
 import org.springframework.stereotype.Service
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 import java.util.function.Consumer
 
 @Service
@@ -13,6 +16,8 @@ class MessageService(
     private val messageRepository: MessageRepository,
     private val channelService: ChannelService,
 ) {
+
+    private val senderThreadPool: ExecutorService = Executors.newFixedThreadPool(THREAD_POOL_SIZE)
 
     fun sendMessage(
         senderUserId: UserId,
@@ -23,8 +28,7 @@ class MessageService(
         try {
             messageRepository.save(
                 MessageEntity(
-                    userId = senderUserId.id,
-                    content = content
+                    userId = senderUserId.id, content = content
                 )
             )
         } catch (ex: Exception) {
@@ -32,17 +36,17 @@ class MessageService(
             return
         }
 
-        val participantIds = channelService.getParticipantIds(channelId)
-        participantIds.filter { userId -> senderUserId != userId }
+        // 온라인된 참여자
+        channelService.getOnlineParticipantIds(channelId).filter { participantId -> senderUserId != participantId }
             .forEach { participantId ->
-                // 유저가 온라인인 경우
-                if (channelService.isOnline(participantId, channelId)) {
+                CompletableFuture.runAsync({
                     messageSender.accept(participantId)
-                }
+                }, senderThreadPool)
             }
     }
 
     companion object {
+        private const val THREAD_POOL_SIZE = 10
         private val log = KotlinLogging.logger {}
     }
 }

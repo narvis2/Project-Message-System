@@ -8,6 +8,6 @@ import com.narvi.messagesystem.dto.domain.InviteCode
 data class CreateRequest @JsonCreator constructor(
     @param:JsonProperty("title")
     val title: String,
-    @param:JsonProperty("participantUsername")
-    val participantUsername: String,
+    @param:JsonProperty("participantUsernames")
+    val participantUsernames: List<String>,
 ) : BaseRequest(MessageType.CREATE_REQUEST)
