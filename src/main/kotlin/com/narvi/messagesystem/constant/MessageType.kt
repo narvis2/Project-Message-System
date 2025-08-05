@@ -19,7 +19,7 @@ class MessageType {
         const val CREATE_REQUEST = "CREATE_REQUEST"
         const val CREATE_RESPONSE = "CREATE_RESPONSE"
 
-        const val ENTER_REQUEST = "CREATE_REQUEST"
+        const val ENTER_REQUEST = "ENTER_REQUEST"
         const val ENTER_RESPONSE = "ENTER_RESPONSE"
 
         const val WRITE_MESSAGE = "WRITE_MESSAGE"

@@ -22,6 +22,7 @@ class JsonUtil {
         objectMapper.readValue(json, clazz)
     }.getOrElse {
         log.error("Failed JSON to Object: ${it.message}")
+        it.printStackTrace()
         null
     }
 
