@@ -1,6 +1,6 @@
 package com.narvi.messagesystem.handler.websocket
 
-import com.narvi.messagesystem.constant.Constants
+import com.narvi.messagesystem.constant.IdKey
 import com.narvi.messagesystem.constant.MessageType
 import com.narvi.messagesystem.constant.UserConnectionStatus
 import com.narvi.messagesystem.dto.domain.UserId
@@ -18,7 +18,7 @@ class DisconnectRequestHandler(
     private val userConnectionService: UserConnectionService,
 ) : BaseRequestHandler<DisconnectRequest> {
     override fun handleRequest(senderSession: WebSocketSession, request: DisconnectRequest) {
-        val senderUserId = senderSession.attributes[Constants.USER_ID.value] as UserId
+        val senderUserId = senderSession.attributes[IdKey.USER_ID.value] as UserId
 
         val result = userConnectionService.disconnect(senderUserId, request.username)
         val isSuccess = result.first

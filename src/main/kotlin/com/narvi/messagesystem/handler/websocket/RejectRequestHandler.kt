@@ -1,6 +1,6 @@
 package com.narvi.messagesystem.handler.websocket
 
-import com.narvi.messagesystem.constant.Constants
+import com.narvi.messagesystem.constant.IdKey
 import com.narvi.messagesystem.constant.MessageType
 import com.narvi.messagesystem.constant.UserConnectionStatus
 import com.narvi.messagesystem.dto.domain.UserId
@@ -18,7 +18,7 @@ class RejectRequestHandler(
     private val webSocketSessionManager: WebSocketSessionManager,
 ) : BaseRequestHandler<RejectRequest> {
     override fun handleRequest(senderSession: WebSocketSession, request: RejectRequest) {
-        val acceptorUserId = senderSession.attributes[Constants.USER_ID.value] as UserId
+        val acceptorUserId = senderSession.attributes[IdKey.USER_ID.value] as UserId
 
         val result = userConnectionService.reject(acceptorUserId, request.username)
         val isSuccess = result.first

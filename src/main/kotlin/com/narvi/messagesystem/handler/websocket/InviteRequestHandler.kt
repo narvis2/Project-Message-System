@@ -1,6 +1,6 @@
 package com.narvi.messagesystem.handler.websocket
 
-import com.narvi.messagesystem.constant.Constants
+import com.narvi.messagesystem.constant.IdKey
 import com.narvi.messagesystem.constant.MessageType
 import com.narvi.messagesystem.constant.UserConnectionStatus
 import com.narvi.messagesystem.dto.domain.UserId
@@ -19,7 +19,7 @@ class InviteRequestHandler(
     private val userConnectionService: UserConnectionService,
 ) : BaseRequestHandler<InviteRequest> {
     override fun handleRequest(senderSession: WebSocketSession, request: InviteRequest) {
-        val inviterUserId = senderSession.attributes[Constants.USER_ID.value] as? UserId ?: return
+        val inviterUserId = senderSession.attributes[IdKey.USER_ID.value] as? UserId ?: return
         val (partnerUserId, inviterUsername) = userConnectionService.invite(inviterUserId, request.userInviteCode)
 
         if (partnerUserId != null) {

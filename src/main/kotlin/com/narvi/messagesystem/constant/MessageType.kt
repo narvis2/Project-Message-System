@@ -15,12 +15,20 @@ class MessageType {
         const val REJECT_RESPONSE = "REJECT_RESPONSE"
         const val DISCONNECT_REQUEST = "DISCONNECT_REQUEST"
         const val DISCONNECT_RESPONSE = "DISCONNECT_RESPONSE"
+
+        const val CREATE_REQUEST = "CREATE_REQUEST"
+        const val CREATE_RESPONSE = "CREATE_RESPONSE"
+
+        const val ENTER_REQUEST = "CREATE_REQUEST"
+        const val ENTER_RESPONSE = "ENTER_RESPONSE"
+
         const val WRITE_MESSAGE = "WRITE_MESSAGE"
 
         // 단방향
         const val ASK_INVITE = "ASK_INVITE"
-        const val NOTIFY_MESSAGE = "NOTIFY_MESSAGE"
         const val NOTIFY_ACCEPT = "NOTIFY_ACCEPT"
+        const val NOTIFY_JOIN = "NOTIFY_JOIN"
+        const val NOTIFY_MESSAGE = "NOTIFY_MESSAGE"
         const val KEEP_ALIVE = "KEEP_ALIVE"
         const val ERROR = "ERROR"
     }

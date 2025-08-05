@@ -1,6 +1,6 @@
 package com.narvi.messagesystem.handler.websocket
 
-import com.narvi.messagesystem.dto.websocket.inbound.WriteMessageRequest
+import com.narvi.messagesystem.dto.websocket.inbound.WriteMessage
 import com.narvi.messagesystem.dto.websocket.outbound.MessageNotification
 import com.narvi.messagesystem.entity.MessageEntity
 import com.narvi.messagesystem.repository.MessageRepository
@@ -9,12 +9,12 @@ import org.springframework.stereotype.Component
 import org.springframework.web.socket.WebSocketSession
 
 @Component
-class WriteMessageRequestHandler(
+class WriteMessageHandler(
     private val webSocketSessionManager: WebSocketSessionManager,
     private val messageRepository: MessageRepository,
-) : BaseRequestHandler<WriteMessageRequest> {
+) : BaseRequestHandler<WriteMessage> {
 
-    override fun handleRequest(senderSession: WebSocketSession, request: WriteMessageRequest) {
+    override fun handleRequest(senderSession: WebSocketSession, request: WriteMessage) {
         val receivedMessage = MessageNotification(
             username = request.username,
             content = request.content

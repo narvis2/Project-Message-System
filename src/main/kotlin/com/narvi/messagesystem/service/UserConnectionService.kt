@@ -34,6 +34,14 @@ class UserConnectionService(
         }
     }
 
+    fun getStatus(
+        inviterUserId: UserId,
+        partnerUserId: UserId
+    ): UserConnectionStatus = userConnectionRepository.findUserConnectionStatusByPartnerAUserIdAndPartnerBUserId(
+        minOf(inviterUserId.id, partnerUserId.id),
+        maxOf(inviterUserId.id, partnerUserId.id),
+    )?.status?.let(UserConnectionStatus::valueOf) ?: UserConnectionStatus.NONE
+
     // return 초대코드의 userId to 받을 사람에게 누가 당신을 초대했는지 이름
     fun invite(inviterUserId: UserId, inviteCode: InviteCode): Pair<UserId?, String> {
         // 연결할 대상
@@ -168,14 +176,6 @@ class UserConnectionService(
             minOf(partnerAUserId.id, partnerBUserId.id),
             maxOf(partnerAUserId.id, partnerBUserId.id),
         )?.inviterUserId?.let(::UserId)
-
-    private fun getStatus(
-        inviterUserId: UserId,
-        partnerUserId: UserId
-    ): UserConnectionStatus = userConnectionRepository.findUserConnectionStatusByPartnerAUserIdAndPartnerBUserId(
-        minOf(inviterUserId.id, partnerUserId.id),
-        maxOf(inviterUserId.id, partnerUserId.id),
-    )?.status?.let(UserConnectionStatus::valueOf) ?: UserConnectionStatus.NONE
 
     @Transactional
     fun setStatus(
