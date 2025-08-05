@@ -9,8 +9,8 @@ class MessageEntity(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "message_sequence")
     var messageSequence: Long? = null,
-    @Column(name = "user_name", nullable = false)
-    var userName: String,
+    @Column(name = "user_id", nullable = false)
+    var userId: Long,
     @Column(name = "content", nullable = false)
     var content: String,
 ) : BaseTimeEntity() {
