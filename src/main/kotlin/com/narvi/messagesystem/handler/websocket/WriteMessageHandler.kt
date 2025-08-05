@@ -28,6 +28,7 @@ class WriteMessageHandler(
             content,
             channelId,
         ) { participantId ->
+            // 자신을 제외한 다른 참여자에게 Message 를 보냄
             val participantSession = webSocketSessionManager.getSession(participantId)
             if (participantSession != null) {
                 val messageNotification = MessageNotification(

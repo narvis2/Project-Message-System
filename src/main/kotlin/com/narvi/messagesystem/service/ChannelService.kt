@@ -1,6 +1,7 @@
 package com.narvi.messagesystem.service
 
 import com.narvi.messagesystem.constant.ResultType
+import com.narvi.messagesystem.constant.UserConnectionStatus
 import com.narvi.messagesystem.dto.domain.Channel
 import com.narvi.messagesystem.dto.domain.ChannelId
 import com.narvi.messagesystem.dto.domain.UserId
@@ -17,6 +18,7 @@ class ChannelService(
     private val channelRepository: ChannelRepository,
     private val userChannelRepository: UserChannelRepository,
     private val sessionService: SessionService,
+    private val userConnectionService: UserConnectionService,
 ) {
 
     fun isJoined(channelId: ChannelId, userId: UserId): Boolean =
@@ -36,6 +38,11 @@ class ChannelService(
         if (title.isNullOrBlank()) {
             log.warn("Invalid args : title is empty.")
             return null to ResultType.INVALID_ARGS
+        }
+
+        if (userConnectionService.getStatus(senderUserId, participantId) != UserConnectionStatus.ACCEPTED) {
+            log.warn("Included unconnected user. participantId: {}", participantId)
+            return null to ResultType.NOT_ALLOWED
         }
 
         return try {
