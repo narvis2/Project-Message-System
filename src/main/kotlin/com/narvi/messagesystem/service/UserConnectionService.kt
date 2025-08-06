@@ -9,6 +9,8 @@ import com.narvi.messagesystem.repository.UserConnectionRepository
 import mu.KotlinLogging
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.transaction.interceptor.TransactionAspectSupport
+import org.springframework.transaction.support.TransactionSynchronizationManager
 
 @Service
 class UserConnectionService(
@@ -36,6 +38,7 @@ class UserConnectionService(
         }
     }
 
+    @Transactional(readOnly = true)
     fun getStatus(
         inviterUserId: UserId, partnerUserId: UserId
     ): UserConnectionStatus = userConnectionRepository.findUserConnectionStatusByPartnerAUserIdAndPartnerBUserId(
@@ -53,7 +56,11 @@ class UserConnectionService(
         ) + userConnectionRepository.countByPartnerBUserIdAndPartnerAUserIdInAndStatus(senderUserId.id, ids, status)
     }
 
-    // return 초대코드의 userId to 받을 사람에게 누가 당신을 초대했는지 이름
+    /**
+     * 쓰기랑 묶어있는 readOnly Transaction 은 source db 에 접근함
+     * return 초대코드의 userId to 받을 사람에게 누가 당신을 초대했는지 이름
+     */
+    @Transactional
     fun invite(inviterUserId: UserId, inviteCode: InviteCode): Pair<UserId?, String> {
         // 연결할 대상
         val partner = userService.getUser(inviteCode)
@@ -84,6 +91,9 @@ class UserConnectionService(
                     setStatus(inviterUserId, partnerUserId, UserConnectionStatus.PENDING)
                     partnerUserId to inviterUsername
                 } catch (ex: Exception) {
+                    if (TransactionSynchronizationManager.isActualTransactionActive()) {
+                        TransactionAspectSupport.currentTransactionStatus().setRollbackOnly()
+                    }
                     log.error("Set Pending failed. cause: {}", ex.message)
                     null to "InviteRequest failed."
                 }
@@ -100,6 +110,7 @@ class UserConnectionService(
         }
     }
 
+    @Transactional
     fun accept(acceptorUserId: UserId, inviterUsername: String): Pair<UserId?, String> {
         val inviterUserId = userService.getUserId(inviterUsername) ?: return null to "Invalid username."
         if (acceptorUserId == inviterUserId) {
@@ -128,13 +139,20 @@ class UserConnectionService(
             userConnectionLimitService.accept(acceptorUserId, inviterUserId)
             inviterUserId to acceptorUsername
         } catch (ex: IllegalStateException) {
+            if (TransactionSynchronizationManager.isActualTransactionActive()) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly()
+            }
             null to ex.message!!
         } catch (ex: Exception) {
+            if (TransactionSynchronizationManager.isActualTransactionActive()) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly()
+            }
             log.error("Accept failed. cause: {}", ex.message)
             null to "Accept failed."
         }
     }
 
+    @Transactional
     fun reject(senderUserId: UserId, inviterUsername: String): Pair<Boolean, String> {
         val inviterUserId = userService.getUserId(inviterUsername) ?: return false to "Reject failed."
 
@@ -152,10 +170,14 @@ class UserConnectionService(
             true to inviterUsername
         } catch (ex: Exception) {
             log.error("Set rejected failed. cause: {}", ex.message)
+            if (TransactionSynchronizationManager.isActualTransactionActive()) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly()
+            }
             false to "Reject failed."
         }
     }
 
+    @Transactional
     fun disconnect(senderUserId: UserId, partnerUsername: String): Pair<Boolean, String> {
         val partnerUserId = userService.getUserId(partnerUsername) ?: return false to "Disconnect failed."
         if (senderUserId == partnerUserId) return false to "Disconnect failed."
@@ -178,12 +200,16 @@ class UserConnectionService(
                 false to "Disconnect failed."
             }
         } catch (ex: Exception) {
+            if (TransactionSynchronizationManager.isActualTransactionActive()) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly()
+            }
             log.error("Disconnect failed. cause: {}", ex.message)
             false to "Disconnect failed."
         }
     }
 
-    private fun getInviterUserId(partnerAUserId: UserId, partnerBUserId: UserId): UserId? =
+    @Transactional(readOnly = true)
+    fun getInviterUserId(partnerAUserId: UserId, partnerBUserId: UserId): UserId? =
         userConnectionRepository.findInviterUserIdByPartnerAUserIdAndPartnerBUserId(
             minOf(partnerAUserId.id, partnerBUserId.id),
             maxOf(partnerAUserId.id, partnerBUserId.id),

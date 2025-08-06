@@ -32,14 +32,11 @@ class UserConnectionLimitService(
             ?: throw EntityNotFoundException("Invalid userId: $secondUserId")
 
         val connection = userConnectionRepository.findByPartnerAUserIdAndPartnerBUserIdAndStatus(
-            firstUserId,
-            secondUserId,
-            UserConnectionStatus.PENDING
+            firstUserId, secondUserId, UserConnectionStatus.PENDING
         ) ?: throw EntityNotFoundException("Invalid status.")
 
-        fun errorMessage(userId: Long): String =
-            if (userId == acceptorUserId.id) "Connection limit reached."
-            else "Connection limit reached by the other user."
+        fun errorMessage(userId: Long): String = if (userId == acceptorUserId.id) "Connection limit reached."
+        else "Connection limit reached by the other user."
 
         check(firstUserEntity.connectionCount < limitConnections) {
             errorMessage(firstUserId)
@@ -64,9 +61,7 @@ class UserConnectionLimitService(
             ?: throw EntityNotFoundException("Invalid userId: $secondUserId")
 
         val connection = userConnectionRepository.findByPartnerAUserIdAndPartnerBUserIdAndStatus(
-            firstUserId,
-            secondUserId,
-            UserConnectionStatus.ACCEPTED
+            firstUserId, secondUserId, UserConnectionStatus.ACCEPTED
         ) ?: throw EntityNotFoundException("Invalid status.")
 
         check(firstUser.connectionCount > 0) { "Count is already zero. userId: $firstUserId" }

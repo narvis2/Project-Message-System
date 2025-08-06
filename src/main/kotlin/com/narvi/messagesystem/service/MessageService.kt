@@ -10,6 +10,7 @@ import com.narvi.messagesystem.repository.MessageRepository
 import com.narvi.messagesystem.session.WebSocketSessionManager
 import mu.KotlinLogging
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -29,6 +30,7 @@ class MessageService(
 
     private val senderThreadPool: ExecutorService = Executors.newFixedThreadPool(THREAD_POOL_SIZE)
 
+    @Transactional
     fun sendMessage(
         senderUserId: UserId,
         content: String,
