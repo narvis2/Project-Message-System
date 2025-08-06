@@ -7,13 +7,13 @@ import com.narvi.messagesystem.dto.websocket.inbound.EnterRequest
 import com.narvi.messagesystem.dto.websocket.outbound.EnterResponse
 import com.narvi.messagesystem.dto.websocket.outbound.ErrorResponse
 import com.narvi.messagesystem.service.ChannelService
-import com.narvi.messagesystem.session.WebSocketSessionManager
+import com.narvi.messagesystem.service.ClientNotificationService
 import org.springframework.stereotype.Component
 import org.springframework.web.socket.WebSocketSession
 
 @Component
 class EnterRequestHandler(
-    private val webSocketSessionManager: WebSocketSessionManager,
+    private val clientNotificationService: ClientNotificationService,
     private val channelService: ChannelService,
 ) : BaseRequestHandler<EnterRequest> {
 
@@ -24,14 +24,12 @@ class EnterRequestHandler(
         val title = result.first
 
         if (!title.isNullOrBlank()) {
-            webSocketSessionManager.sendMessage(
-                senderSession,
-                EnterResponse(request.channelId, title)
+            clientNotificationService.sendMessage(
+                senderSession, senderUserId, EnterResponse(request.channelId, title)
             )
         } else {
-            webSocketSessionManager.sendMessage(
-                senderSession,
-                ErrorResponse(MessageType.ENTER_REQUEST, result.second.message)
+            clientNotificationService.sendMessage(
+                senderSession, senderUserId, ErrorResponse(MessageType.ENTER_REQUEST, result.second.message)
             )
         }
     }

@@ -8,13 +8,13 @@ import com.narvi.messagesystem.dto.websocket.inbound.JoinRequest
 import com.narvi.messagesystem.dto.websocket.outbound.ErrorResponse
 import com.narvi.messagesystem.dto.websocket.outbound.JoinResponse
 import com.narvi.messagesystem.service.ChannelService
-import com.narvi.messagesystem.session.WebSocketSessionManager
+import com.narvi.messagesystem.service.ClientNotificationService
 import org.springframework.stereotype.Component
 import org.springframework.web.socket.WebSocketSession
 
 @Component
 class JoinRequestHandler(
-    private val webSocketSessionManager: WebSocketSessionManager,
+    private val clientNotificationService: ClientNotificationService,
     private val channelService: ChannelService,
 ) : BaseRequestHandler<JoinRequest> {
 
@@ -24,8 +24,8 @@ class JoinRequestHandler(
         val (channel, errorType) = runCatching {
             channelService.join(request.inviteCode, senderUserId)
         }.getOrElse {
-            webSocketSessionManager.sendMessage(
-                senderSession, ErrorResponse(MessageType.JOIN_REQUEST, ResultType.FAILED.message)
+            clientNotificationService.sendMessage(
+                senderSession, senderUserId, ErrorResponse(MessageType.JOIN_REQUEST, ResultType.FAILED.message)
             )
             return
         }
@@ -36,6 +36,6 @@ class JoinRequestHandler(
             ErrorResponse(MessageType.JOIN_REQUEST, errorType.message)
         }
 
-        webSocketSessionManager.sendMessage(senderSession, response)
+        clientNotificationService.sendMessage(senderSession, senderUserId, response)
     }
 }

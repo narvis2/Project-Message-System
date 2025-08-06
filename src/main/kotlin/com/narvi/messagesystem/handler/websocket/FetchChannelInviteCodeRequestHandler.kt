@@ -7,13 +7,13 @@ import com.narvi.messagesystem.dto.websocket.inbound.FetchChannelInviteCodeReque
 import com.narvi.messagesystem.dto.websocket.outbound.ErrorResponse
 import com.narvi.messagesystem.dto.websocket.outbound.FetchChannelInviteCodeResponse
 import com.narvi.messagesystem.service.ChannelService
-import com.narvi.messagesystem.session.WebSocketSessionManager
+import com.narvi.messagesystem.service.ClientNotificationService
 import org.springframework.stereotype.Component
 import org.springframework.web.socket.WebSocketSession
 
 @Component
 class FetchChannelInviteCodeRequestHandler(
-    private val webSocketSessionManager: WebSocketSessionManager,
+    private val clientNotificationService: ClientNotificationService,
     private val channelService: ChannelService,
 ) : BaseRequestHandler<FetchChannelInviteCodeRequest> {
 
@@ -22,8 +22,9 @@ class FetchChannelInviteCodeRequestHandler(
         val channelId = request.channelId
 
         if (!channelService.isJoined(channelId, senderUserId)) {
-            webSocketSessionManager.sendMessage(
+            clientNotificationService.sendMessage(
                 senderSession,
+                senderUserId,
                 ErrorResponse(MessageType.FETCH_CHANNEL_INVITECODE_REQUEST, "Not joined the channel.")
             )
             return
@@ -31,12 +32,13 @@ class FetchChannelInviteCodeRequestHandler(
 
         val channelInviteCode = channelService.getInviteCode(channelId)
         if (channelInviteCode != null) {
-            webSocketSessionManager.sendMessage(
-                senderSession, FetchChannelInviteCodeResponse(channelId, channelInviteCode)
+            clientNotificationService.sendMessage(
+                senderSession, senderUserId, FetchChannelInviteCodeResponse(channelId, channelInviteCode)
             )
         } else {
-            webSocketSessionManager.sendMessage(
+            clientNotificationService.sendMessage(
                 senderSession,
+                senderUserId,
                 ErrorResponse(MessageType.FETCH_CHANNEL_INVITECODE_REQUEST, "Fetch channel invite code failed.")
             )
         }

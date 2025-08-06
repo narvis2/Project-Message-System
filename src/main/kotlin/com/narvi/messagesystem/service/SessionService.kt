@@ -29,6 +29,7 @@ class SessionService(
             if (channelIds != null) {
                 val onlineParticipantUserIds: MutableList<UserId> = ArrayList(userIds.size)
                 val chId: String = channelId.id.toString()
+
                 for (idx in userIds.indices) {
                     val value = channelIds[idx]
                     if (value != null && value == chId) {

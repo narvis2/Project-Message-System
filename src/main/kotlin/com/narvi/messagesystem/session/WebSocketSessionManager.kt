@@ -1,18 +1,15 @@
 package com.narvi.messagesystem.session
 
 import com.narvi.messagesystem.dto.domain.UserId
-import com.narvi.messagesystem.dto.websocket.outbound.BaseMessage
-import com.narvi.messagesystem.json.JsonUtil
 import mu.KotlinLogging
 import org.springframework.stereotype.Component
 import org.springframework.web.socket.TextMessage
 import org.springframework.web.socket.WebSocketSession
+import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
 
 @Component
-class WebSocketSessionManager(
-    private val jsonUtil: JsonUtil,
-) {
+class WebSocketSessionManager {
 
     private val sessions: MutableMap<UserId, WebSocketSession> = ConcurrentHashMap<UserId, WebSocketSession>()
 
@@ -37,14 +34,13 @@ class WebSocketSessionManager(
         }
     }
 
-    fun sendMessage(session: WebSocketSession, message: BaseMessage) {
-        jsonUtil.toJson(message)?.let {
-            try {
-                session.sendMessage(TextMessage(it))
-                log.info("send message: {} to {}", it, session.id)
-            } catch (e: Exception) {
-                log.error("메시지 전송 실패. cause: {}", e.message)
-            }
+    fun sendMessage(session: WebSocketSession, message: String) {
+        try {
+            session.sendMessage(TextMessage(message))
+            log.info("send message: {} to {}", message, session.id)
+        } catch (e: IOException) {
+            log.error("Send message failed. cause: {}", e.message)
+            throw e
         }
     }
 
