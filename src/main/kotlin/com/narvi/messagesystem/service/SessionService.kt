@@ -57,6 +57,18 @@ class SessionService(
         }
     }
 
+    fun removeActiveChannel(userId: UserId): Boolean {
+        val channelIdKey = buildChannelIdKey(userId)
+
+        return try {
+            stringRedisTemplate.delete(channelIdKey)
+            true
+        } catch (ex: Exception) {
+            log.error("Redis Delete failed. key: {},", channelIdKey)
+            false
+        }
+    }
+
     fun refreshTTL(userId: UserId, httpSessionId: String) {
         val channelIdKey = buildChannelIdKey(userId)
 

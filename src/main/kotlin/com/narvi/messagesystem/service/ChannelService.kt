@@ -10,6 +10,7 @@ import com.narvi.messagesystem.entity.ChannelEntity
 import com.narvi.messagesystem.entity.UserChannelEntity
 import com.narvi.messagesystem.repository.ChannelRepository
 import com.narvi.messagesystem.repository.UserChannelRepository
+import jakarta.persistence.EntityNotFoundException
 import mu.KotlinLogging
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -41,6 +42,16 @@ class ChannelService(
 
     fun getOnlineParticipantIds(channelId: ChannelId): List<UserId> =
         sessionService.getOnlineParticipantUserIds(channelId, getParticipantIds(channelId))
+
+    fun getChannel(inviteCode: InviteCode): Channel? = channelRepository.findChannelByInviteCode(inviteCode.code)?.let {
+        Channel(
+            channelId = ChannelId(id = it.channelId), title = it.title, headCount = it.headCount
+        )
+    }
+
+    fun getChannels(userId: UserId): List<Channel> = userChannelRepository.findChannelsByUserId(userId.id).map {
+        Channel(channelId = ChannelId(id = it.channelId), title = it.title, headCount = it.headCount)
+    }
 
     @Transactional
     fun create(senderUserId: UserId, participantIds: List<UserId>, title: String): Pair<Channel?, ResultType> {
@@ -93,6 +104,33 @@ class ChannelService(
         }
     }
 
+    @Transactional
+    fun join(inviteCode: InviteCode, userId: UserId): Pair<Channel?, ResultType> {
+        val channel = getChannel(inviteCode) ?: return null to ResultType.NOT_FOUND
+        if (isJoined(channel.channelId, userId)) {
+            return null to ResultType.ALREADY_JOINED
+        }
+
+        if (channel.headCount >= LIMIT_HEAD_COUNT) {
+            return null to ResultType.OVER_LIMIT
+        }
+
+        val channelEntity = channelRepository.findForUpdateByChannelId(channel.channelId.id)
+            ?: throw EntityNotFoundException("Invalid channelId: ${channel.channelId}")
+
+        // Join 가능
+        if (channelEntity.headCount < LIMIT_HEAD_COUNT) {
+            channelEntity.headCount += 1
+            userChannelRepository.save(
+                UserChannelEntity(
+                    userId = userId.id, channelId = channel.channelId.id, lastReadMsgSeq = 0
+                )
+            )
+        }
+
+        return channel to ResultType.SUCCESS
+    }
+
     fun enter(channelId: ChannelId, userId: UserId): Pair<String?, ResultType> {
         if (!isJoined(channelId, userId)) {
             log.warn("Enter channel failed. User not joined the channel. channelId: {}, userId: {}", channelId, userId)
@@ -111,6 +149,27 @@ class ChannelService(
             log.error("Enter channel failed. channelId: {}, userId: {}", channelId, userId)
             null to ResultType.FAILED
         }
+    }
+
+    fun leave(userId: UserId): Boolean = sessionService.removeActiveChannel(userId)
+
+    @Transactional
+    fun quit(channelId: ChannelId, userId: UserId): ResultType {
+        if (!isJoined(channelId, userId)) {
+            return ResultType.NOT_JOINED
+        }
+
+        val channelEntity = channelRepository.findForUpdateByChannelId(channelId.id)
+            ?: throw EntityNotFoundException("Invalid channelId: $channelId")
+
+        if (channelEntity.headCount > 0) {
+            channelEntity.headCount -= 1
+        } else {
+            log.error("Count is already zero. channelId: {}, userId: {}", channelId, userId)
+        }
+
+        userChannelRepository.deleteByUserIdAndChannelId(userId.id, channelId.id)
+        return ResultType.SUCCESS
     }
 
     companion object {
