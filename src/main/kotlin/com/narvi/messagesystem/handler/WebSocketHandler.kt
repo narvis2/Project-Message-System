@@ -21,6 +21,10 @@ class WebSocketHandler(
     private val jsonUtil: JsonUtil,
 ) : TextWebSocketHandler() {
 
+    /**
+     * 클라이언트와 WebSocket 연결이 성립되었을 때 호출됨.
+     * 세션을 데코레이션한 후 userId를 기준으로 세션을 등록함.
+     */
     override fun afterConnectionEstablished(session: WebSocketSession) {
         log.info("ConnectionEstablished : {} ", session.id)
         // 5초 안에 발생이 안끝나면 뭔가 문제가 발생한 것으로 보고 Socket 을 끊어 버림
@@ -35,17 +39,29 @@ class WebSocketHandler(
         webSocketSessionManager.putSession(userId, concurrentWebSocketSessionDecorator)
     }
 
+    /**
+     * WebSocket 통신 중 오류가 발생했을 때 호출됨.
+     * 해당 userId의 세션을 종료함.
+     */
     override fun handleTransportError(session: WebSocketSession, exception: Throwable) {
         log.error("Transport Error : [{}] from {}", exception.message, session.id)
         val userId = session.attributes[IdKey.USER_ID.value] as? UserId ?: return
         webSocketSessionManager.closeSession(userId)
     }
 
+    /**
+     * WebSocket 연결이 정상적으로 종료되었을 때 호출됨.
+     * 세션 매니저에서 해당 userId의 세션을 제거함.
+     */
     override fun afterConnectionClosed(session: WebSocketSession, status: CloseStatus) {
         val userId = session.attributes[IdKey.USER_ID.value] as? UserId ?: return
         webSocketSessionManager.closeSession(userId)
     }
 
+    /**
+     * 클라이언트로부터 텍스트 메시지를 수신했을 때 호출됨.
+     * 메시지를 JSON으로 파싱한 후 적절한 handler에게 위임하여 처리함.
+     */
     override fun handleTextMessage(senderSession: WebSocketSession, message: TextMessage) {
         val payload = message.payload
         log.info("Received TextMessage: [{}] from {}", payload, senderSession.id)

@@ -7,25 +7,26 @@ import com.narvi.messagesystem.dto.domain.UserId
 import com.narvi.messagesystem.dto.websocket.inbound.RejectRequest
 import com.narvi.messagesystem.dto.websocket.outbound.ErrorResponse
 import com.narvi.messagesystem.dto.websocket.outbound.RejectResponse
+import com.narvi.messagesystem.service.ClientNotificationService
 import com.narvi.messagesystem.service.UserConnectionService
-import com.narvi.messagesystem.session.WebSocketSessionManager
 import org.springframework.stereotype.Component
 import org.springframework.web.socket.WebSocketSession
 
 @Component
 class RejectRequestHandler(
     private val userConnectionService: UserConnectionService,
-    private val webSocketSessionManager: WebSocketSessionManager,
+    private val clientNotificationService: ClientNotificationService,
 ) : BaseRequestHandler<RejectRequest> {
     override fun handleRequest(senderSession: WebSocketSession, request: RejectRequest) {
-        val acceptorUserId = senderSession.attributes[IdKey.USER_ID.value] as UserId
+        val senderUserId = senderSession.attributes[IdKey.USER_ID.value] as UserId
 
-        val result = userConnectionService.reject(acceptorUserId, request.username)
+        val result = userConnectionService.reject(senderUserId, request.username)
         val isSuccess = result.first
 
         if (isSuccess) {
-            webSocketSessionManager.sendMessage(
+            clientNotificationService.sendMessage(
                 senderSession,
+                senderUserId,
                 RejectResponse(
                     request.username,
                     UserConnectionStatus.REJECTED
@@ -33,8 +34,9 @@ class RejectRequestHandler(
             )
         } else {
             val errorMessage = result.second
-            webSocketSessionManager.sendMessage(
+            clientNotificationService.sendMessage(
                 senderSession,
+                senderUserId,
                 ErrorResponse(
                     MessageType.REJECT_REQUEST,
                     errorMessage,

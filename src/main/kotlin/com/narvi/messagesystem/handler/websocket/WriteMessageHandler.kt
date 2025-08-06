@@ -6,7 +6,6 @@ import com.narvi.messagesystem.dto.websocket.inbound.WriteMessage
 import com.narvi.messagesystem.dto.websocket.outbound.MessageNotification
 import com.narvi.messagesystem.service.MessageService
 import com.narvi.messagesystem.service.UserService
-import com.narvi.messagesystem.session.WebSocketSessionManager
 import org.springframework.stereotype.Component
 import org.springframework.web.socket.WebSocketSession
 
@@ -14,7 +13,6 @@ import org.springframework.web.socket.WebSocketSession
 class WriteMessageHandler(
     private val userService: UserService,
     private val messageService: MessageService,
-    private val webSocketSessionManager: WebSocketSessionManager,
 ) : BaseRequestHandler<WriteMessage> {
 
     override fun handleRequest(senderSession: WebSocketSession, request: WriteMessage) {
@@ -22,23 +20,15 @@ class WriteMessageHandler(
         val channelId = request.channelId
         val content = request.content
         val senderUsername = userService.getUsername(senderUserId) ?: "unknown"
-
         messageService.sendMessage(
             senderUserId,
             content,
             channelId,
-        ) { participantId ->
-            // 자신을 제외한 다른 참여자에게 Message 를 보냄
-            val participantSession = webSocketSessionManager.getSession(participantId)
-            if (participantSession != null) {
-                val messageNotification = MessageNotification(
-                    channelId = channelId,
-                    username = senderUsername,
-                    content = content
-                )
-                webSocketSessionManager.sendMessage(participantSession, messageNotification)
-            }
-        }
-
+            MessageNotification(
+                channelId = channelId,
+                username = senderUsername,
+                content = content
+            )
+        )
     }
 }

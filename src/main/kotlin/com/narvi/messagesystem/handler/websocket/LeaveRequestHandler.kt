@@ -7,13 +7,13 @@ import com.narvi.messagesystem.dto.websocket.inbound.LeaveRequest
 import com.narvi.messagesystem.dto.websocket.outbound.ErrorResponse
 import com.narvi.messagesystem.dto.websocket.outbound.LeaveResponse
 import com.narvi.messagesystem.service.ChannelService
-import com.narvi.messagesystem.session.WebSocketSessionManager
+import com.narvi.messagesystem.service.ClientNotificationService
 import org.springframework.stereotype.Component
 import org.springframework.web.socket.WebSocketSession
 
 @Component
 class LeaveRequestHandler(
-    private val webSocketSessionManager: WebSocketSessionManager,
+    private val clientNotificationService: ClientNotificationService,
     private val channelService: ChannelService,
 ) : BaseRequestHandler<LeaveRequest> {
 
@@ -26,6 +26,6 @@ class LeaveRequestHandler(
             ErrorResponse(MessageType.LEAVE_REQUEST, "Leave failed.")
         }
 
-        webSocketSessionManager.sendMessage(senderSession, response)
+        clientNotificationService.sendMessage(senderSession, senderUserId, response)
     }
 }

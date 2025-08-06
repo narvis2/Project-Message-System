@@ -22,18 +22,23 @@ class SessionService(
 
     fun getUsername(): String = SecurityContextHolder.getContext().authentication.name
 
-    fun getOnlineParticipantUserIds(channelId: ChannelId, userIds: List<UserId>): List<UserId> {
+    fun getOnlineParticipantUserIds(channelId: ChannelId, userIds: List<UserId>): List<UserId?> {
         val channelIdKeys = userIds.map(::buildChannelIdKey)
         try {
             val channelIds = stringRedisTemplate.opsForValue().multiGet(channelIdKeys)
             if (channelIds != null) {
-                val onlineParticipantUserIds: MutableList<UserId> = ArrayList(userIds.size)
+                val onlineParticipantUserIds: MutableList<UserId?> = ArrayList(userIds.size)
                 val chId: String = channelId.id.toString()
+
                 for (idx in userIds.indices) {
                     val value = channelIds[idx]
-                    if (value != null && value == chId) {
-                        onlineParticipantUserIds.add(userIds[idx])
-                    }
+                    onlineParticipantUserIds.add(
+                        if (value != null && value == chId) {
+                            userIds[idx]
+                        } else {
+                            null
+                        }
+                    )
                 }
 
                 return onlineParticipantUserIds
