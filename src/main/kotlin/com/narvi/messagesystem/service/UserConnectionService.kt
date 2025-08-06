@@ -17,6 +17,11 @@ class UserConnectionService(
     private val userConnectionLimitService: UserConnectionLimitService,
 ) {
 
+    /**
+     * 하나의 함수에서 Query 를 2번 날랄때는 readOnly true 를 해야 함
+     * 명시적으로 하나의 Connection Pool 에서 동작함
+     */
+    @Transactional(readOnly = true)
     fun getUsersByStatus(userId: UserId, status: UserConnectionStatus): List<User> {
         val usersA = userConnectionRepository.findByPartnerAUserIdAndStatus(userId.id, status)
         val usersB = userConnectionRepository.findByPartnerBUserIdAndStatus(userId.id, status)
@@ -38,6 +43,7 @@ class UserConnectionService(
         maxOf(inviterUserId.id, partnerUserId.id),
     )?.status?.let(UserConnectionStatus::valueOf) ?: UserConnectionStatus.NONE
 
+    @Transactional(readOnly = true)
     fun countConnectionStatus(senderUserId: UserId, partnerIds: List<UserId>, status: UserConnectionStatus): Long {
         val ids = partnerIds.map { it.id }
         return userConnectionRepository.countByPartnerAUserIdAndPartnerBUserIdInAndStatus(
