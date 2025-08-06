@@ -23,6 +23,7 @@ class ChannelService(
     private val userConnectionService: UserConnectionService,
 ) {
 
+    @Transactional(readOnly = true)
     fun getInviteCode(channelId: ChannelId): InviteCode? =
         channelRepository.findChannelInviteCodeByChannelId(channelId.id)?.let {
             InviteCode(it.inviteCode)
@@ -31,9 +32,11 @@ class ChannelService(
             null
         }
 
+    @Transactional(readOnly = true)
     fun isJoined(channelId: ChannelId, userId: UserId): Boolean =
         userChannelRepository.existsByUserIdAndChannelId(userId.id, channelId.id)
 
+    @Transactional(readOnly = true)
     fun getParticipantIds(channelId: ChannelId): List<UserId> = userChannelRepository.findUserIdsByChannelId(
         channelId.id
     ).map { userId ->
@@ -43,12 +46,14 @@ class ChannelService(
     fun getOnlineParticipantIds(channelId: ChannelId, userIds: List<UserId>): List<UserId> =
         sessionService.getOnlineParticipantUserIds(channelId, userIds)
 
+    @Transactional(readOnly = true)
     fun getChannel(inviteCode: InviteCode): Channel? = channelRepository.findChannelByInviteCode(inviteCode.code)?.let {
         Channel(
             channelId = ChannelId(id = it.channelId), title = it.title, headCount = it.headCount
         )
     }
 
+    @Transactional(readOnly = true)
     fun getChannels(userId: UserId): List<Channel> = userChannelRepository.findChannelsByUserId(userId.id).map {
         Channel(channelId = ChannelId(id = it.channelId), title = it.title, headCount = it.headCount)
     }
@@ -131,6 +136,7 @@ class ChannelService(
         return channel to ResultType.SUCCESS
     }
 
+    @Transactional(readOnly = true)
     fun enter(channelId: ChannelId, userId: UserId): Pair<String?, ResultType> {
         if (!isJoined(channelId, userId)) {
             log.warn("Enter channel failed. User not joined the channel. channelId: {}, userId: {}", channelId, userId)
@@ -143,6 +149,7 @@ class ChannelService(
             return null to ResultType.NOT_FOUND
         }
 
+        // 레디스에 해당 유저가 어떤 Channel 에 참가했는지에 대한 데이터 저장
         return if (sessionService.setActiveChannel(userId, channelId)) {
             title to ResultType.SUCCESS
         } else {

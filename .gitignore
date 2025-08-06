@@ -38,6 +38,4 @@ out/
 
 ### Kotlin ###
 .kotlin
-docker/
-docker-compose.yaml
-application.yml
+docker/data

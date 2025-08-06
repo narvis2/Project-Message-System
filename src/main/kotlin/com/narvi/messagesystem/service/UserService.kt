@@ -17,27 +17,35 @@ class UserService(
     private val passwordEncoder: PasswordEncoder,
 ) {
 
-    fun getUserId(username: String): UserId? = userRepository.findByUsername(username)?.let { UserId(it.userId) }
+//    @Transactional(readOnly = true)
+//    fun getUserId(username: String): UserId? = userRepository.findByUsername(username)?.userId?.let(::UserId)
 
+    @Transactional(readOnly = true)
+    fun getUserId(username: String): UserId? = userRepository.findUserIdByUsername(username)?.userId?.let(::UserId)
+
+    @Transactional(readOnly = true)
     fun getUsername(userId: UserId): String? = userRepository.findByUserId(userId.id)?.username
 
+    @Transactional(readOnly = true)
     fun getUserIds(usernames: List<String>): List<UserId> =
         userRepository.findByUsernameIn(usernames).map { projection ->
             UserId(projection.userId)
         }
 
-    fun getUser(inviteCode: InviteCode): User? =
-        userRepository.findByInviteCode(inviteCode.code)?.let { entity ->
-            User(
-                userId = UserId(entity.userId),
-                username = entity.username,
-            )
-        }
+    @Transactional(readOnly = true)
+    fun getUser(inviteCode: InviteCode): User? = userRepository.findByInviteCode(inviteCode.code)?.let { entity ->
+        User(
+            userId = UserId(entity.userId),
+            username = entity.username,
+        )
+    }
 
+    @Transactional(readOnly = true)
     fun getInviteCode(userId: UserId): InviteCode? = userRepository.findInviteCodeByUserId(
         userId.id
     )?.inviteCode?.let(::InviteCode)
 
+    @Transactional(readOnly = true)
     fun getConnectionCount(userId: UserId): Int? = userRepository.findCountByUserId(
         userId.id
     )?.connectionCount
