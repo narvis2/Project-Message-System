@@ -50,7 +50,7 @@ class UserConnectionService(
             senderUserId.id,
             ids,
             status
-        ) + userConnectionRepository.countByPartnerAUserIdAndPartnerBUserIdInAndStatus(senderUserId.id, ids, status)
+        ) + userConnectionRepository.countByPartnerBUserIdAndPartnerAUserIdInAndStatus(senderUserId.id, ids, status)
     }
 
     // return 초대코드의 userId to 받을 사람에게 누가 당신을 초대했는지 이름
