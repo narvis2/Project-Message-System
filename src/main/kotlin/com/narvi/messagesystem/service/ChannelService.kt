@@ -40,7 +40,7 @@ class ChannelService(
         UserId(userId.userId)
     }
 
-    fun getOnlineParticipantIds(channelId: ChannelId, userIds: List<UserId>): List<UserId?> =
+    fun getOnlineParticipantIds(channelId: ChannelId, userIds: List<UserId>): List<UserId> =
         sessionService.getOnlineParticipantUserIds(channelId, userIds)
 
     fun getChannel(inviteCode: InviteCode): Channel? = channelRepository.findChannelByInviteCode(inviteCode.code)?.let {

@@ -20,6 +20,7 @@ class WriteMessageHandler(
         val channelId = request.channelId
         val content = request.content
         val senderUsername = userService.getUsername(senderUserId) ?: "unknown"
+
         messageService.sendMessage(
             senderUserId,
             content,

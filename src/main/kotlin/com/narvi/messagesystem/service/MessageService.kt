@@ -57,6 +57,7 @@ class MessageService(
         val onlineParticipantIds = channelService.getOnlineParticipantIds(channelId, allParticipantIds)
 
         allParticipantIds.forEachIndexed { idx, participantId ->
+            // 자기 자신한테는 메시지를 보내지 않음
             if (participantId == senderUserId) return@forEachIndexed
 
             val isOnline = onlineParticipantIds.getOrNull(idx) != null
