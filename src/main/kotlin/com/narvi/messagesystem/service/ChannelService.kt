@@ -1,5 +1,6 @@
 package com.narvi.messagesystem.service
 
+import com.narvi.messagesystem.constant.KeyPrefix
 import com.narvi.messagesystem.constant.ResultType
 import com.narvi.messagesystem.constant.UserConnectionStatus
 import com.narvi.messagesystem.dto.domain.Channel
@@ -8,6 +9,7 @@ import com.narvi.messagesystem.dto.domain.InviteCode
 import com.narvi.messagesystem.dto.domain.UserId
 import com.narvi.messagesystem.entity.ChannelEntity
 import com.narvi.messagesystem.entity.UserChannelEntity
+import com.narvi.messagesystem.json.JsonUtil
 import com.narvi.messagesystem.repository.ChannelRepository
 import com.narvi.messagesystem.repository.UserChannelRepository
 import jakarta.persistence.EntityNotFoundException
@@ -21,41 +23,118 @@ class ChannelService(
     private val userChannelRepository: UserChannelRepository,
     private val sessionService: SessionService,
     private val userConnectionService: UserConnectionService,
+    private val cacheService: CacheService,
+    private val jsonUtil: JsonUtil,
 ) {
 
+    private val TTL: Long = 600 // 10분
+
     @Transactional(readOnly = true)
-    fun getInviteCode(channelId: ChannelId): InviteCode? =
-        channelRepository.findChannelInviteCodeByChannelId(channelId.id)?.let {
-            InviteCode(it.inviteCode)
+    fun getInviteCode(channelId: ChannelId): InviteCode? {
+        val key = cacheService.buildKey(KeyPrefix.CHANNEL_INVITECODE, channelId.id.toString())
+
+        val cacheInviteCode = cacheService.get(key)
+        if (cacheInviteCode != null) {
+            return InviteCode(cacheInviteCode)
+        }
+
+        return channelRepository.findChannelInviteCodeByChannelId(channelId.id)?.inviteCode?.let { inviteCode ->
+            cacheService.set(key, inviteCode, TTL)
+            InviteCode(inviteCode)
         } ?: run {
             log.warn("Invite code is not exist. channelId: {}", channelId)
             null
         }
+    }
 
     @Transactional(readOnly = true)
-    fun isJoined(channelId: ChannelId, userId: UserId): Boolean =
-        userChannelRepository.existsByUserIdAndChannelId(userId.id, channelId.id)
+    fun isJoined(channelId: ChannelId, userId: UserId): Boolean {
+        val key = cacheService.buildKey(KeyPrefix.JOINED_CHANNEL, channelId.id.toString(), userId.id.toString())
+        val cachedChannel = cacheService.get(key)
+        if (cachedChannel != null) {
+            return true
+        }
+
+        val fromDb = userChannelRepository.existsByUserIdAndChannelId(userId.id, channelId.id)
+        if (fromDb) {
+            cacheService.set(key, "T", TTL)
+        }
+
+        return fromDb
+    }
 
     @Transactional(readOnly = true)
-    fun getParticipantIds(channelId: ChannelId): List<UserId> = userChannelRepository.findUserIdsByChannelId(
-        channelId.id
-    ).map { userId ->
-        UserId(userId.userId)
+    fun getParticipantIds(channelId: ChannelId): List<UserId> {
+        val key = cacheService.buildKey(KeyPrefix.PARTICIPANT_IDS, channelId.id.toString())
+        val cachedParticipantIds = cacheService.get(key)
+        if (cachedParticipantIds != null) {
+            return jsonUtil.fromJsonToList(cachedParticipantIds, String::class.java).map { userId ->
+                UserId(userId.toLong())
+            }
+        }
+
+        val fromDbUserIds = userChannelRepository.findUserIdsByChannelId(
+            channelId.id
+        ).map { userId ->
+            UserId(userId.userId)
+        }
+
+        if (fromDbUserIds.isNotEmpty()) {
+            jsonUtil.toJson(fromDbUserIds.map { it.id.toString() })?.let { json ->
+                cacheService.set(key, json, TTL)
+            }
+        }
+
+        return fromDbUserIds
     }
 
     fun getOnlineParticipantIds(channelId: ChannelId, userIds: List<UserId>): List<UserId> =
         sessionService.getOnlineParticipantUserIds(channelId, userIds)
 
     @Transactional(readOnly = true)
-    fun getChannel(inviteCode: InviteCode): Channel? = channelRepository.findChannelByInviteCode(inviteCode.code)?.let {
-        Channel(
-            channelId = ChannelId(id = it.channelId), title = it.title, headCount = it.headCount
-        )
+    fun getChannel(inviteCode: InviteCode): Channel? {
+        val key = cacheService.buildKey(KeyPrefix.CHANNEL, inviteCode.code)
+
+        val cachedChannel = cacheService.get(key)
+        if (cachedChannel != null) {
+            return jsonUtil.fromJson(cachedChannel, Channel::class.java)
+        }
+
+        val fromDbChannel =  channelRepository.findChannelByInviteCode(inviteCode.code)?.let {
+            Channel(
+                channelId = ChannelId(id = it.channelId), title = it.title, headCount = it.headCount
+            )
+        }
+
+        if (fromDbChannel != null) {
+            jsonUtil.toJson(fromDbChannel)?.let { json ->
+                cacheService.set(key, json, TTL)
+            }
+        }
+
+        return fromDbChannel
     }
 
     @Transactional(readOnly = true)
-    fun getChannels(userId: UserId): List<Channel> = userChannelRepository.findChannelsByUserId(userId.id).map {
-        Channel(channelId = ChannelId(id = it.channelId), title = it.title, headCount = it.headCount)
+    fun getChannels(userId: UserId): List<Channel> {
+        val key = cacheService.buildKey(KeyPrefix.CHANNELS, userId.id.toString())
+
+        val cachedChannels = cacheService.get(key)
+        if (cachedChannels != null) {
+            return jsonUtil.fromJsonToList(cachedChannels, Channel::class.java)
+        }
+
+        val fromDbChannels = userChannelRepository.findChannelsByUserId(userId.id).map {
+            Channel(channelId = ChannelId(id = it.channelId), title = it.title, headCount = it.headCount)
+        }
+
+        if (fromDbChannels.isNotEmpty()) {
+            jsonUtil.toJson(fromDbChannels)?.let { json ->
+                cacheService.set(key, json, TTL)
+            }
+        }
+
+        return fromDbChannels
     }
 
     @Transactional
@@ -131,6 +210,12 @@ class ChannelService(
                     userId = userId.id, channelId = channel.channelId.id, lastReadMsgSeq = 0
                 )
             )
+            cacheService.delete(
+                listOf(
+                    cacheService.buildKey(KeyPrefix.CHANNEL, channelEntity.inviteCode),
+                    cacheService.buildKey(KeyPrefix.CHANNELS, userId.id.toString()),
+                )
+            )
         }
 
         return channel to ResultType.SUCCESS
@@ -176,6 +261,12 @@ class ChannelService(
         }
 
         userChannelRepository.deleteByUserIdAndChannelId(userId.id, channelId.id)
+        cacheService.delete(
+            listOf(
+                cacheService.buildKey(KeyPrefix.CHANNEL, channelEntity.inviteCode),
+                cacheService.buildKey(KeyPrefix.CHANNELS, userId.id.toString()),
+            )
+        )
         return ResultType.SUCCESS
     }
 

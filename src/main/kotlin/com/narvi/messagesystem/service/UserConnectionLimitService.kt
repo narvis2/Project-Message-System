@@ -1,10 +1,12 @@
 package com.narvi.messagesystem.service
 
+import com.narvi.messagesystem.constant.KeyPrefix
 import com.narvi.messagesystem.constant.UserConnectionStatus
 import com.narvi.messagesystem.dto.domain.UserId
 import com.narvi.messagesystem.repository.UserConnectionRepository
 import com.narvi.messagesystem.repository.UserRepository
 import jakarta.persistence.EntityNotFoundException
+import mu.KotlinLogging
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -12,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional
 class UserConnectionLimitService(
     private val userRepository: UserRepository,
     private val userConnectionRepository: UserConnectionRepository,
+    private val cacheService: CacheService,
 ) {
 
     var limitConnections: Int = 1000
@@ -48,6 +51,37 @@ class UserConnectionLimitService(
         firstUserEntity.connectionCount += 1
         secondUserEntity.connectionCount += 1
         connection.status = UserConnectionStatus.ACCEPTED
+
+        val statusKey = cacheService.buildKey(
+            KeyPrefix.CONNECTION_STATUS, firstUserId.toString(), secondUserId.toString()
+        )
+        val connectionsStatusKey1 = cacheService.buildKey(
+            KeyPrefix.CONNECTIONS_STATUS, acceptorUserId.id.toString(), UserConnectionStatus.ACCEPTED.name
+        )
+        val connectionsStatusKey2 = cacheService.buildKey(
+            KeyPrefix.CONNECTIONS_STATUS, inviterUserId.id.toString(), UserConnectionStatus.ACCEPTED.name
+        )
+
+        log.info(
+            "📌 UserConnectionLimitService > accept > statusKey: {}, connectionsStatusKey1: {}, connectionsStatusKey2: {}, connectionsStatusKey3: {}",
+            statusKey,
+            connectionsStatusKey1,
+            connectionsStatusKey2
+        )
+
+        cacheService.delete(
+            listOf(
+                cacheService.buildKey(
+                    KeyPrefix.CONNECTION_STATUS, firstUserId.toString(), secondUserId.toString()
+                ),
+                cacheService.buildKey(
+                    KeyPrefix.CONNECTIONS_STATUS, acceptorUserId.id.toString(), UserConnectionStatus.ACCEPTED.name
+                ),
+                cacheService.buildKey(
+                    KeyPrefix.CONNECTIONS_STATUS, inviterUserId.id.toString(), UserConnectionStatus.ACCEPTED.name
+                ),
+            )
+        )
     }
 
     @Transactional
@@ -70,5 +104,40 @@ class UserConnectionLimitService(
         firstUser.connectionCount -= 1
         secondUser.connectionCount -= 1
         connection.status = UserConnectionStatus.DISCONNECTED
+
+        val statusKey = cacheService.buildKey(
+            KeyPrefix.CONNECTION_STATUS, firstUserId.toString(), secondUserId.toString()
+        )
+        val connectionsStatusKey1 = cacheService.buildKey(
+            KeyPrefix.CONNECTIONS_STATUS, senderUserId.id.toString(), UserConnectionStatus.DISCONNECTED.name
+        )
+        val connectionsStatusKey2 = cacheService.buildKey(
+            KeyPrefix.CONNECTIONS_STATUS, partnerUserId.id.toString(), UserConnectionStatus.DISCONNECTED.name
+        )
+
+        log.info(
+            "📌 UserConnectionLimitService > disconnect > statusKey: {}, connectionsStatusKey1: {}, connectionsStatusKey2: {}, connectionsStatusKey3: {}",
+            statusKey,
+            connectionsStatusKey1,
+            connectionsStatusKey2
+        )
+
+        cacheService.delete(
+            listOf(
+                cacheService.buildKey(
+                    KeyPrefix.CONNECTION_STATUS, firstUserId.toString(), secondUserId.toString()
+                ),
+                cacheService.buildKey(
+                    KeyPrefix.CONNECTIONS_STATUS, senderUserId.id.toString(), UserConnectionStatus.DISCONNECTED.name
+                ),
+                cacheService.buildKey(
+                    KeyPrefix.CONNECTIONS_STATUS, partnerUserId.id.toString(), UserConnectionStatus.DISCONNECTED.name
+                ),
+            )
+        )
+    }
+
+    companion object {
+        private val log = KotlinLogging.logger { }
     }
 }

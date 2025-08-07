@@ -12,6 +12,12 @@ import org.springframework.stereotype.Component
 import org.springframework.web.socket.WebSocketHandler
 import org.springframework.web.socket.server.support.HttpSessionHandshakeInterceptor
 
+/**
+ * 클라이언트와 서버 간에 WebSocket 연결을 설정하는 초기 단계
+ * 이 과정은 HTTP 프로토콜을 통해 이루어지며,
+ * Client 의 WebSocket 연결 요청을 서버가 수락하고,
+ * 양방향 통신 채널을 확립하는 절차
+ */
 @Component
 class WebSocketHttpSessionHandshakeInterceptor : HttpSessionHandshakeInterceptor() {
 
