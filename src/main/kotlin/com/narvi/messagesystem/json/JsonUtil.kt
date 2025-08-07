@@ -2,7 +2,7 @@ package com.narvi.messagesystem.json
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
-import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator
+import com.fasterxml.jackson.databind.type.CollectionType
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.kotlinModule
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule
@@ -14,8 +14,7 @@ class JsonUtil {
     private val objectMapper = ObjectMapper().apply {
         registerModules(JavaTimeModule())
         registerModules(kotlinModule())
-        registerModule(ParameterNamesModule())
-        .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+        registerModule(ParameterNamesModule()).disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
     }
 
     fun <T> fromJson(json: String, clazz: Class<T>): T? = runCatching {
@@ -24,6 +23,16 @@ class JsonUtil {
         log.error("Failed JSON to Object: ${it.message}")
         it.printStackTrace()
         null
+    }
+
+    fun <T> fromJsonToList(json: String, clazz: Class<T>): List<T> = runCatching {
+//        val listType: CollectionType = objectMapper.typeFactory.constructCollectionType(MutableList::class.java, clazz)
+//        return objectMapper.readValue(json, listType)
+        objectMapper.readerForListOf(clazz).readValue<List<T>>(json)
+    }.getOrElse {
+        log.error("Failed JSON to List<Object>: ${it.message}")
+        it.printStackTrace()
+        emptyList()
     }
 
     fun <T> toJson(obj: T): String? = runCatching {

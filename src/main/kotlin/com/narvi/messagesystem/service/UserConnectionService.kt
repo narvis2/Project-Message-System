@@ -1,10 +1,12 @@
 package com.narvi.messagesystem.service
 
+import com.narvi.messagesystem.constant.KeyPrefix
 import com.narvi.messagesystem.constant.UserConnectionStatus
 import com.narvi.messagesystem.dto.domain.InviteCode
 import com.narvi.messagesystem.dto.domain.User
 import com.narvi.messagesystem.dto.domain.UserId
 import com.narvi.messagesystem.entity.UserConnectionEntity
+import com.narvi.messagesystem.json.JsonUtil
 import com.narvi.messagesystem.repository.UserConnectionRepository
 import mu.KotlinLogging
 import org.springframework.stereotype.Service
@@ -17,7 +19,11 @@ class UserConnectionService(
     private val userService: UserService,
     private val userConnectionRepository: UserConnectionRepository,
     private val userConnectionLimitService: UserConnectionLimitService,
+    private val cacheService: CacheService,
+    private val jsonUtil: JsonUtil
 ) {
+
+    private val TTL: Long = 600 // 10분
 
     /**
      * 하나의 함수에서 Query 를 2번 날랄때는 readOnly true 를 해야 함
@@ -25,34 +31,64 @@ class UserConnectionService(
      */
     @Transactional(readOnly = true)
     fun getUsersByStatus(userId: UserId, status: UserConnectionStatus): List<User> {
+        val key = cacheService.buildKey(KeyPrefix.CONNECTIONS_STATUS, userId.id.toString(), status.name)
+        log.info("📌 UserConnectionService > getUsersByStatus > $key")
+        val cachedUsers = cacheService.get(key)
+        if (cachedUsers != null) {
+            return jsonUtil.fromJsonToList(cachedUsers, User::class.java)
+        }
+
         val usersA = userConnectionRepository.findByPartnerAUserIdAndStatus(userId.id, status)
         val usersB = userConnectionRepository.findByPartnerBUserIdAndStatus(userId.id, status)
 
         // Pending 일때 요청 받은 사람만 Pending List 를 볼 수 있도록 수정
-        return if (status == UserConnectionStatus.ACCEPTED) {
+        val fromDb = if (status == UserConnectionStatus.ACCEPTED) {
             (usersA + usersB).map { User(UserId(it.userId), it.username) }
         } else {
             (usersA + usersB).filter { item ->
-                    item.inviterUserId != userId.id
-                }.map { User(UserId(it.userId), it.username) }
+                item.inviterUserId != userId.id
+            }.map { User(UserId(it.userId), it.username) }
         }
+
+        if (fromDb.isNotEmpty()) {
+            jsonUtil.toJson(fromDb)?.let {
+                cacheService.set(key, it, TTL)
+            }
+        }
+
+        return fromDb
     }
 
     @Transactional(readOnly = true)
     fun getStatus(
         inviterUserId: UserId, partnerUserId: UserId
-    ): UserConnectionStatus = userConnectionRepository.findUserConnectionStatusByPartnerAUserIdAndPartnerBUserId(
-        minOf(inviterUserId.id, partnerUserId.id),
-        maxOf(inviterUserId.id, partnerUserId.id),
-    )?.status?.let(UserConnectionStatus::valueOf) ?: UserConnectionStatus.NONE
+    ): UserConnectionStatus {
+        val partnerA = minOf(inviterUserId.id, partnerUserId.id)
+        val partnerB = maxOf(inviterUserId.id, partnerUserId.id)
+
+        val key = cacheService.buildKey(KeyPrefix.CONNECTION_STATUS, partnerA.toString(), partnerB.toString())
+
+        log.info("📌 UserConnectionService > getStatus > $key")
+
+        val connectionStatus = cacheService.get(key)
+        if (connectionStatus != null) {
+            return UserConnectionStatus.valueOf(connectionStatus)
+        }
+
+        val fromDB = userConnectionRepository.findUserConnectionStatusByPartnerAUserIdAndPartnerBUserId(
+            partnerA,
+            partnerB,
+        )?.status?.let(UserConnectionStatus::valueOf) ?: UserConnectionStatus.NONE
+
+        cacheService.set(key, fromDB.name, TTL)
+        return fromDB
+    }
 
     @Transactional(readOnly = true)
     fun countConnectionStatus(senderUserId: UserId, partnerIds: List<UserId>, status: UserConnectionStatus): Long {
         val ids = partnerIds.map { it.id }
         return userConnectionRepository.countByPartnerAUserIdAndPartnerBUserIdInAndStatus(
-            senderUserId.id,
-            ids,
-            status
+            senderUserId.id, ids, status
         ) + userConnectionRepository.countByPartnerBUserIdAndPartnerAUserIdInAndStatus(senderUserId.id, ids, status)
     }
 
@@ -190,8 +226,7 @@ class UserConnectionService(
             }
 
             if (status == UserConnectionStatus.REJECTED && getInviterUserId(
-                    senderUserId,
-                    partnerUserId
+                    senderUserId, partnerUserId
                 ) == partnerUserId
             ) {
                 setStatus(senderUserId, partnerUserId, UserConnectionStatus.DISCONNECTED)
@@ -209,11 +244,24 @@ class UserConnectionService(
     }
 
     @Transactional(readOnly = true)
-    fun getInviterUserId(partnerAUserId: UserId, partnerBUserId: UserId): UserId? =
-        userConnectionRepository.findInviterUserIdByPartnerAUserIdAndPartnerBUserId(
-            minOf(partnerAUserId.id, partnerBUserId.id),
-            maxOf(partnerAUserId.id, partnerBUserId.id),
-        )?.inviterUserId?.let(::UserId)
+    fun getInviterUserId(partnerAUserId: UserId, partnerBUserId: UserId): UserId? {
+        val partnerA = minOf(partnerAUserId.id, partnerBUserId.id)
+        val partnerB = maxOf(partnerAUserId.id, partnerBUserId.id)
+
+        val key = cacheService.buildKey(KeyPrefix.INVITER_USER_ID, partnerA.toString(), partnerB.toString())
+        val cachedInviteUserId = cacheService.get(key)
+        if (cachedInviteUserId != null) {
+            return UserId(cachedInviteUserId.toLong())
+        }
+
+        return userConnectionRepository.findInviterUserIdByPartnerAUserIdAndPartnerBUserId(
+            partnerA,
+            partnerB,
+        )?.inviterUserId?.let { inviteUserId ->
+            cacheService.set(key, inviteUserId.toString(), TTL)
+            UserId(inviteUserId)
+        }
+    }
 
     @Transactional
     fun setStatus(
@@ -223,12 +271,28 @@ class UserConnectionService(
             throw IllegalArgumentException("Can't set to accepted.")
         }
 
+        val partnerA = minOf(inviterUserId.id, partnerUserId.id)
+        val partnerB = maxOf(inviterUserId.id, partnerUserId.id)
+
         userConnectionRepository.save(
             UserConnectionEntity(
-                partnerAUserId = minOf(inviterUserId.id, partnerUserId.id),
-                partnerBUserId = maxOf(inviterUserId.id, partnerUserId.id),
+                partnerAUserId = partnerA,
+                partnerBUserId = partnerB,
                 status = status,
                 inviterUserId = inviterUserId.id,
+            )
+        )
+        cacheService.delete(
+            listOf(
+                cacheService.buildKey(
+                    KeyPrefix.CONNECTION_STATUS, partnerA.toString(), partnerB.toString()
+                ),
+                cacheService.buildKey(
+                    KeyPrefix.CONNECTIONS_STATUS, inviterUserId.id.toString(), status.name
+                ),
+                cacheService.buildKey(
+                    KeyPrefix.CONNECTIONS_STATUS, partnerUserId.id.toString(), status.name
+                ),
             )
         )
     }

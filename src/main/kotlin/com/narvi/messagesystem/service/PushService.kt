@@ -16,6 +16,7 @@ class PushService {
     fun pushMessage(userId: UserId?, messageType: String, message: String?) {
         if (pushMessageTypes.contains(messageType)) {
             log.info("push message: {} to user: {}", message, userId)
+            // TODO:: FCM 전송
         }
     }
 
