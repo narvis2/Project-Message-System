@@ -21,7 +21,7 @@ import org.springframework.session.data.redis.config.annotation.web.http.EnableR
 @EnableRedisHttpSession(
     redisNamespace = "message:user_session",
     maxInactiveIntervalInSeconds = 300,
-    flushMode = FlushMode.IMMEDIATE
+    flushMode = FlushMode.IMMEDIATE // SessionRepository 에서 수정할때 바로 적용되도록
 )
 class RedisSessionConfig {
 
