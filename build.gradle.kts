@@ -55,6 +55,8 @@ dependencies {
 
     implementation("io.github.microutils:kotlin-logging:3.0.5")
 
+    implementation("org.springframework.kafka:spring-kafka")
+
     // @ConfigurationProperties 사용
     kapt("org.springframework.boot:spring-boot-configuration-processor")
     runtimeOnly("com.mysql:mysql-connector-j")
@@ -63,6 +65,7 @@ dependencies {
     testImplementation("org.spockframework:spock-core:2.4-M5-groovy-4.0")
     testImplementation("org.spockframework:spock-spring:2.4-M5-groovy-4.0")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testImplementation("org.springframework.kafka:spring-kafka-test")
 }
 
 kotlin {

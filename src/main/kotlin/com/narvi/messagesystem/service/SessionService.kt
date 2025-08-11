@@ -23,9 +23,10 @@ class SessionService(
     fun getUsername(): String = SecurityContextHolder.getContext().authentication.name
 
     fun getOnlineParticipantUserIds(channelId: ChannelId, userIds: List<UserId>): List<UserId> {
-        val channelIdKeys = userIds.map(::buildChannelIdKey)
+        val channelIdKeys = userIds.stream().map { userId: UserId -> this.buildChannelIdKey(userId) }.toList()
         try {
             val channelIds = stringRedisTemplate.opsForValue().multiGet(channelIdKeys)
+
             if (channelIds != null) {
                 val onlineParticipantUserIds: MutableList<UserId> = ArrayList(userIds.size)
                 val chId: String = channelId.id.toString()
