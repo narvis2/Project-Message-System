@@ -2,6 +2,7 @@ package com.narvi.messagesystem.json
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
+import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.kotlinModule
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule
@@ -39,6 +40,15 @@ class JsonUtil {
         objectMapper.writeValueAsString(obj)
     }.getOrElse {
         log.error("Failed Object to JSON: ${it.message}")
+        null
+    }
+
+    fun addValue(json: String, key: String, value: String): String? = runCatching {
+        val node = objectMapper.readTree(json) as ObjectNode
+        node.put(key, value)
+
+        objectMapper.writeValueAsString(node)
+    }.getOrElse {
         null
     }
 

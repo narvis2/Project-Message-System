@@ -2,6 +2,7 @@ package com.narvi.messagesystem.service
 
 import com.narvi.messagesystem.constant.MessageType
 import com.narvi.messagesystem.dto.domain.UserId
+import com.narvi.messagesystem.dto.kafka.outbound.*
 import com.narvi.messagesystem.dto.websocket.outbound.BaseMessage
 import com.narvi.messagesystem.json.JsonUtil
 import com.narvi.messagesystem.session.WebSocketSessionManager
@@ -18,18 +19,19 @@ class ClientNotificationService(
 
     init {
         // 클라이언트에 푸시 가능한 메시지 타입 등록
-        listOf(
-            MessageType.INVITE_RESPONSE,
-            MessageType.ASK_INVITE,
-            MessageType.ACCEPT_RESPONSE,
-            MessageType.NOTIFY_ACCEPT,
-            MessageType.JOIN_RESPONSE,
-            MessageType.NOTIFY_JOIN,
-            MessageType.DISCONNECT_RESPONSE,
-            MessageType.REJECT_RESPONSE,
-            MessageType.CREATE_RESPONSE,
-            MessageType.QUIT_RESPONSE
-        ).forEach { pushService.registerPushMessageType(it) }
+        hashMapOf(
+            MessageType.INVITE_RESPONSE to InviteResponseRecord::class.java,
+            MessageType.ASK_INVITE to InviteNotificationRecord::class.java,
+            MessageType.ACCEPT_RESPONSE to AcceptResponseRecord::class.java,
+            MessageType.NOTIFY_ACCEPT to AcceptNotificationRecord::class.java,
+            MessageType.NOTIFY_JOIN to JoinNotificationRecord::class.java,
+            MessageType.DISCONNECT_RESPONSE to DisconnectResponseRecord::class.java,
+            MessageType.REJECT_RESPONSE to RejectResponseRecord::class.java,
+            MessageType.CREATE_RESPONSE to CreateResponseRecord::class.java,
+            MessageType.QUIT_RESPONSE to QuitResponseRecord::class.java,
+        ).forEach {
+            pushService.registerPushMessageType(it.key, it.value)
+        }
     }
 
     // 명시된 세션을 통해 메시지를 전송합니다.

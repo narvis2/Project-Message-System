@@ -3,6 +3,7 @@ package com.narvi.messagesystem.service
 import com.narvi.messagesystem.constant.MessageType
 import com.narvi.messagesystem.dto.domain.ChannelId
 import com.narvi.messagesystem.dto.domain.UserId
+import com.narvi.messagesystem.dto.kafka.outbound.MessageNotificationRecord
 import com.narvi.messagesystem.dto.websocket.outbound.BaseMessage
 import com.narvi.messagesystem.entity.MessageEntity
 import com.narvi.messagesystem.json.JsonUtil
@@ -25,7 +26,7 @@ class MessageService(
 ) {
 
     init {
-        pushService.registerPushMessageType(MessageType.NOTIFY_MESSAGE)
+        pushService.registerPushMessageType(MessageType.NOTIFY_MESSAGE, MessageNotificationRecord::class.java)
     }
 
     private val senderThreadPool: ExecutorService = Executors.newFixedThreadPool(THREAD_POOL_SIZE)
@@ -58,14 +59,15 @@ class MessageService(
         val allParticipantIds = channelService.getParticipantIds(channelId)
         val onlineParticipantIds = channelService.getOnlineParticipantIds(channelId, allParticipantIds)
 
-        allParticipantIds.forEachIndexed { idx, participantId ->
+        allParticipantIds.forEach { participantId ->
             // 자기 자신한테는 메시지를 보내지 않음
-            if (participantId == senderUserId) return@forEachIndexed
+            if (participantId == senderUserId) return@forEach
 
-            val isOnline = onlineParticipantIds.getOrNull(idx) != null
+            val isOnline = participantId in onlineParticipantIds
+
             /**
              * Online 의 경우 WebSocket 으로 Message
-             * Offline 의 경우 FCM Push Notification
+             * Offline 의 경우 Kafka -> FCM Push Notification
              */
             if (isOnline) {
                 CompletableFuture.runAsync({
