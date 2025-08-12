@@ -1,6 +1,9 @@
+server:
+  port: 8090
+
 spring:
   application:
-    name: message-system-add-kafka
+    name: message-system-split-auth
   datasource:
     source:
       hikari:
@@ -61,5 +64,4 @@ logging:
   level:
     org.springframework.security.web.context: TRACE
     org.springframework.security.core.context: TRACE
-
 

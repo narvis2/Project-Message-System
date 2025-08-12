@@ -20,8 +20,6 @@ class SessionService(
 
     private val TTL: Long = 300
 
-    fun getUsername(): String = SecurityContextHolder.getContext().authentication.name
-
     fun getOnlineParticipantUserIds(channelId: ChannelId, userIds: List<UserId>): List<UserId> {
         val channelIdKeys = userIds.stream().map { userId: UserId -> this.buildChannelIdKey(userId) }.toList()
         try {
