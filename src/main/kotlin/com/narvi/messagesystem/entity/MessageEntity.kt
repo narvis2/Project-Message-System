@@ -4,10 +4,13 @@ import jakarta.persistence.*
 
 @Entity
 @Table(name = "message")
+@IdClass(ChannelSequenceId::class)
 class MessageEntity(
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "message_sequence")
+    @Column(name = "channel_id", nullable = false)
+    var channelId: Long? = null,
+    @Id
+    @Column(name = "message_sequence", nullable = false)
     var messageSequence: Long? = null,
     @Column(name = "user_id", nullable = false)
     var userId: Long,

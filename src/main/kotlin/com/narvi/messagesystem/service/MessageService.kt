@@ -2,6 +2,7 @@ package com.narvi.messagesystem.service
 
 import com.narvi.messagesystem.constant.MessageType
 import com.narvi.messagesystem.dto.domain.ChannelId
+import com.narvi.messagesystem.dto.domain.MessageSeqId
 import com.narvi.messagesystem.dto.domain.UserId
 import com.narvi.messagesystem.dto.kafka.outbound.MessageNotificationRecord
 import com.narvi.messagesystem.dto.websocket.outbound.BaseMessage
@@ -36,6 +37,7 @@ class MessageService(
         senderUserId: UserId,
         content: String,
         channelId: ChannelId,
+        messageSeqId: MessageSeqId,
         message: BaseMessage,
     ) {
         val payload = jsonUtil.toJson(message)
@@ -48,7 +50,10 @@ class MessageService(
         try {
             messageRepository.save(
                 MessageEntity(
-                    userId = senderUserId.id, content = content
+                    channelId = channelId.id,
+                    messageSequence = messageSeqId.id,
+                    userId = senderUserId.id,
+                    content = content
                 )
             )
         } catch (ex: Exception) {
