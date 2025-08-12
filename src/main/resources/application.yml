@@ -3,7 +3,7 @@ server:
 
 spring:
   application:
-    name: message-system-split-auth
+    name: message-system-add-nginx
   datasource:
     source:
       hikari:

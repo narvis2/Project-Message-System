@@ -1,1 +1,1 @@
-rootProject.name = "message-system-split-auth"
+rootProject.name = "message-system-add-nginx"
