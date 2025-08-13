@@ -30,6 +30,12 @@ class MessageType {
         const val QUIT_REQUEST = "QUIT_REQUEST"
         const val QUIT_RESPONSE = "QUIT_RESPONSE"
         const val WRITE_MESSAGE = "WRITE_MESSAGE"
+        const val FETCH_MESSAGES_REQUEST = "FETCH_MESSAGES_REQUEST"
+        const val FETCH_MESSAGES_RESPONSE = "FETCH_MESSAGES_RESPONSE"
+
+        // Ack
+        const val READ_MESSAGE_ACK = "READ_MESSAGE_ACK"
+        const val WRITE_MESSAGE_ACK = "WRITE_MESSAGE_ACK"
 
         // 단방향
         const val ASK_INVITE = "ASK_INVITE"

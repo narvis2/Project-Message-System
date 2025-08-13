@@ -1,1 +1,1 @@
-rootProject.name = "message-system-add-nginx"
+rootProject.name = "message-system-add-correction"

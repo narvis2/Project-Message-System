@@ -1,6 +1,8 @@
 package com.narvi.messagesystem.service
 
 import mu.KotlinLogging
+import org.springframework.data.redis.core.RedisOperations
+import org.springframework.data.redis.core.SessionCallback
 import org.springframework.data.redis.core.StringRedisTemplate
 import org.springframework.stereotype.Service
 import java.util.concurrent.TimeUnit
@@ -29,6 +31,23 @@ class CacheService(
         true
     } catch (e: Exception) {
         log.error("Redis set failed. key: {}, cause: {}", key, e.message)
+        false
+    }
+
+    fun set(map: Map<String, String>, ttlSeconds: Long): Boolean = runCatching {
+        stringRedisTemplate.executePipelined(object : SessionCallback<Void?> {
+            override fun <K : Any?, V : Any?> execute(operations: RedisOperations<K, V>): Void? {
+                val stringOps = operations as RedisOperations<String, String>
+                map.forEach { (key, value) ->
+                    stringOps.opsForValue().set(key, value, ttlSeconds, TimeUnit.SECONDS)
+                }
+
+                return null
+            }
+        })
+        true
+    }.getOrElse {
+        log.error("Redis multiset failed. key: {}, cause: {}", map.keys, it.message)
         false
     }
 

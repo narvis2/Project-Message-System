@@ -2,13 +2,11 @@ package com.narvi.messagesystem.service
 
 import com.narvi.messagesystem.constant.ResultType
 import com.narvi.messagesystem.constant.UserConnectionStatus
-import com.narvi.messagesystem.dto.domain.Channel
-import com.narvi.messagesystem.dto.domain.ChannelId
-import com.narvi.messagesystem.dto.domain.InviteCode
-import com.narvi.messagesystem.dto.domain.UserId
+import com.narvi.messagesystem.dto.domain.*
 import com.narvi.messagesystem.entity.ChannelEntity
 import com.narvi.messagesystem.entity.UserChannelEntity
 import com.narvi.messagesystem.repository.ChannelRepository
+import com.narvi.messagesystem.repository.MessageRepository
 import com.narvi.messagesystem.repository.UserChannelRepository
 import jakarta.persistence.EntityNotFoundException
 import mu.KotlinLogging
@@ -21,6 +19,7 @@ class ChannelService(
     private val userChannelRepository: UserChannelRepository,
     private val sessionService: SessionService,
     private val userConnectionService: UserConnectionService,
+    private val messageRepository: MessageRepository,
 ) {
 
     @Transactional(readOnly = true)
@@ -137,7 +136,7 @@ class ChannelService(
     }
 
     @Transactional(readOnly = true)
-    fun enter(channelId: ChannelId, userId: UserId): Pair<String?, ResultType> {
+    fun enter(channelId: ChannelId, userId: UserId): Pair<ChannelEntry?, ResultType> {
         if (!isJoined(channelId, userId)) {
             log.warn("Enter channel failed. User not joined the channel. channelId: {}, userId: {}", channelId, userId)
             return null to ResultType.NOT_JOINED
@@ -149,9 +148,26 @@ class ChannelService(
             return null to ResultType.NOT_FOUND
         }
 
+        val lastReadMsgSeq =
+            userChannelRepository.findLastReadMsgSeqByUserIdAndChannelId(userId.id, channelId.id)?.let {
+                MessageSeqId(it.lastReadMsgSeq)
+            }
+
+        if (lastReadMsgSeq == null) {
+            log.error("Enter channel failed. No record found for UserId: {} and ChannelId: {}", channelId.id, userId.id)
+            return null to ResultType.NOT_FOUND
+        }
+
+        val lastChannelMessageSeqId =
+            messageRepository.findLastMessageSequenceByChannelId(channelId.id)?.let(::MessageSeqId) ?: MessageSeqId(0L)
+
         // 레디스에 해당 유저가 어떤 Channel 에 참가했는지에 대한 데이터 저장
         return if (sessionService.setActiveChannel(userId, channelId)) {
-            title to ResultType.SUCCESS
+            ChannelEntry(
+                title = title,
+                lastReadMessageSeqId = lastReadMsgSeq,
+                lastChannelMessageSeqId = lastChannelMessageSeqId
+            ) to ResultType.SUCCESS
         } else {
             log.error("Enter channel failed. channelId: {}, userId: {}", channelId, userId)
             null to ResultType.FAILED

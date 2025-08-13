@@ -4,9 +4,10 @@ import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.narvi.messagesystem.constant.MessageType
 import com.narvi.messagesystem.dto.domain.ChannelId
+import com.narvi.messagesystem.dto.domain.MessageSeqId
 
-data class WriteMessage @JsonCreator constructor(
-    @param:JsonProperty("serial") val serial: Long,
+data class FetchMessagesRequest @JsonCreator constructor(
     @param:JsonProperty("channelId") val channelId: ChannelId,
-    @param:JsonProperty("content") val content: String,
-) : BaseRequest(MessageType.WRITE_MESSAGE)
+    @param:JsonProperty("startMessageSeqId") val startMessageSeqId: MessageSeqId,
+    @param:JsonProperty("endMessageSeqId") val endMessageSeqId: MessageSeqId
+) : BaseRequest(MessageType.FETCH_MESSAGES_REQUEST)

@@ -3,7 +3,7 @@ server:
 
 spring:
   application:
-    name: message-system-add-nginx
+    name: message-system-add-correction
   datasource:
     source:
       hikari:

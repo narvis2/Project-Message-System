@@ -30,6 +30,7 @@ class WriteMessageHandler(
                 content,
                 channelId,
                 messageSeqId,
+                request.serial,
                 MessageNotification(
                     channelId = channelId,
                     messageSeqId = messageSeqId,
