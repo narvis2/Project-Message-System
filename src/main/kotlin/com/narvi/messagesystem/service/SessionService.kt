@@ -1,11 +1,11 @@
 package com.narvi.messagesystem.service
 
 import com.narvi.messagesystem.constant.IdKey
+import com.narvi.messagesystem.constant.KeyPrefix
 import com.narvi.messagesystem.dto.domain.ChannelId
 import com.narvi.messagesystem.dto.domain.UserId
 import mu.KotlinLogging
 import org.springframework.data.redis.core.StringRedisTemplate
-import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.session.Session
 import org.springframework.session.SessionRepository
 import org.springframework.stereotype.Service
@@ -19,8 +19,6 @@ class SessionService(
 ) {
 
     private val TTL: Long = 300
-
-    fun getUsername(): String = SecurityContextHolder.getContext().authentication.name
 
     fun getOnlineParticipantUserIds(channelId: ChannelId, userIds: List<UserId>): List<UserId> {
         val channelIdKeys = userIds.stream().map { userId: UserId -> this.buildChannelIdKey(userId) }.toList()
@@ -85,10 +83,8 @@ class SessionService(
         }
     }
 
-    private fun buildChannelIdKey(userId: UserId): String {
-        val NAMESPACE = "message:user"
-        return "%s:%d:%s".format(NAMESPACE, userId.id, IdKey.CHANNEL_ID.value)
-    }
+    private fun buildChannelIdKey(userId: UserId): String =
+        "%s:%d:%s".format(KeyPrefix.USER, userId.id, IdKey.CHANNEL_ID.value)
 
     companion object {
         private val log = KotlinLogging.logger {}

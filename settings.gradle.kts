@@ -1,1 +1,1 @@
-rootProject.name = "message-system-add-kafka"
+rootProject.name = "message-system-add-correction"

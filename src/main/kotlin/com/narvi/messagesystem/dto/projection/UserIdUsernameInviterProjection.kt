@@ -1,6 +1,7 @@
 package com.narvi.messagesystem.dto.projection
 
-interface UserIdUsernameProjection {
+interface UserIdUsernameInviterProjection {
     val userId: Long
     val username: String
+    val inviterUserId: Long
 }

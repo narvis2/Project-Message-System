@@ -21,11 +21,18 @@ class EnterRequestHandler(
         val senderUserId = senderSession.attributes[IdKey.USER_ID.value] as UserId
 
         val result = channelService.enter(request.channelId, senderUserId)
-        val title = result.first
+        val channelEntry = result.first
 
-        if (!title.isNullOrBlank()) {
+        if (channelEntry != null) {
             clientNotificationService.sendMessage(
-                senderSession, senderUserId, EnterResponse(request.channelId, title)
+                senderSession,
+                senderUserId,
+                EnterResponse(
+                    channelId = request.channelId,
+                    title = channelEntry.title,
+                    lastReadMessageSeqId = channelEntry.lastReadMessageSeqId,
+                    lastChannelMessageSeqId = channelEntry.lastChannelMessageSeqId,
+                )
             )
         } else {
             clientNotificationService.sendMessage(

@@ -4,11 +4,9 @@ import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.SerializationFeature
-import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import com.fasterxml.jackson.module.kotlin.kotlinModule
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule
+import com.narvi.messagesystem.constant.KeyPrefix
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer
@@ -19,7 +17,7 @@ import org.springframework.session.data.redis.config.annotation.web.http.EnableR
 
 @Configuration
 @EnableRedisHttpSession(
-    redisNamespace = "message:user_session",
+    redisNamespace = KeyPrefix.USER_SESSION,
     maxInactiveIntervalInSeconds = 300,
     flushMode = FlushMode.IMMEDIATE // SessionRepository 에서 수정할때 바로 적용되도록
 )

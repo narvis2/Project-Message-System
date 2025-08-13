@@ -21,6 +21,8 @@ import com.narvi.messagesystem.constant.MessageType
     JsonSubTypes.Type(value = JoinRequest::class, name = MessageType.JOIN_REQUEST),
     JsonSubTypes.Type(value = LeaveRequest::class, name = MessageType.LEAVE_REQUEST),
     JsonSubTypes.Type(value = QuitRequest::class, name = MessageType.QUIT_REQUEST),
+    JsonSubTypes.Type(value = ReadMessageAck::class, name = MessageType.READ_MESSAGE_ACK),
+    JsonSubTypes.Type(value = FetchMessagesRequest::class, name = MessageType.FETCH_MESSAGES_REQUEST),
 )
 sealed class BaseRequest(
     val type: String

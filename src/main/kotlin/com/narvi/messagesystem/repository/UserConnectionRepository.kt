@@ -3,7 +3,7 @@ package com.narvi.messagesystem.repository
 import com.narvi.messagesystem.constant.UserConnectionStatus
 import com.narvi.messagesystem.dto.projection.InviterUserIdProjection
 import com.narvi.messagesystem.dto.projection.UserConnectionStatusProjection
-import com.narvi.messagesystem.dto.projection.UserIdUsernameProjection
+import com.narvi.messagesystem.dto.projection.UserIdUsernameInviterProjection
 import com.narvi.messagesystem.entity.UserConnectionEntity
 import com.narvi.messagesystem.entity.UserConnectionId
 import org.springframework.data.jpa.repository.JpaRepository
@@ -51,7 +51,7 @@ interface UserConnectionRepository : JpaRepository<UserConnectionEntity, UserCon
     fun findByPartnerAUserIdAndStatus(
         @Param("userId") userId: Long,
         @Param("status") status: UserConnectionStatus
-    ): List<UserIdUsernameProjection>
+    ): List<UserIdUsernameInviterProjection>
 
     @Query(
         """
@@ -64,6 +64,6 @@ interface UserConnectionRepository : JpaRepository<UserConnectionEntity, UserCon
     fun findByPartnerBUserIdAndStatus(
         @Param("userId") userId: Long,
         @Param("status") status: UserConnectionStatus
-    ): List<UserIdUsernameProjection>
+    ): List<UserIdUsernameInviterProjection>
 
 }
