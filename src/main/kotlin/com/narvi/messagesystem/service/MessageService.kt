@@ -9,9 +9,7 @@ import com.narvi.messagesystem.dto.domain.UserId
 import com.narvi.messagesystem.dto.kafka.outbound.MessageNotificationRecord
 import com.narvi.messagesystem.dto.websocket.outbound.BaseMessage
 import com.narvi.messagesystem.dto.websocket.outbound.WriteMessageAck
-import com.narvi.messagesystem.entity.MessageEntity
 import com.narvi.messagesystem.json.JsonUtil
-import com.narvi.messagesystem.repository.MessageRepository
 import com.narvi.messagesystem.repository.UserChannelRepository
 import com.narvi.messagesystem.session.WebSocketSessionManager
 import mu.KotlinLogging
@@ -23,13 +21,13 @@ import java.util.concurrent.Executors
 
 @Service
 class MessageService(
-    private val messageRepository: MessageRepository,
     private val channelService: ChannelService,
     private val pushService: PushService,
     private val webSocketSessionManager: WebSocketSessionManager,
     private val jsonUtil: JsonUtil,
     private val userChannelRepository: UserChannelRepository,
-    private val userService: UserService
+    private val userService: UserService,
+    private val messageShardService: MessageShardService
 ) {
 
     init {
@@ -44,10 +42,10 @@ class MessageService(
         startMessageSeqId: MessageSeqId,
         endMessageSeqId: MessageSeqId
     ): Pair<List<Message>, ResultType> {
-        val messageInfos = messageRepository.findByChannelIdAndMessageSequenceBetween(
-            channelId.id,
-            startMessageSeqId.id,
-            endMessageSeqId.id
+        val messageInfos = messageShardService.findByChannelIdAndMessageSequenceBetween(
+            channelId,
+            startMessageSeqId,
+            endMessageSeqId
         )
         val userIds = messageInfos.map { UserId(it.userId) }.toSet()
 
@@ -91,13 +89,11 @@ class MessageService(
         }
 
         try {
-            messageRepository.save(
-                MessageEntity(
-                    channelId = channelId.id,
-                    messageSequence = messageSeqId.id,
-                    userId = senderUserId.id,
-                    content = content
-                )
+            messageShardService.save(
+                channelId,
+                messageSeqId,
+                senderUserId,
+                content
             )
         } catch (ex: Exception) {
             log.error("Send message failed. cause: {}", ex.message)

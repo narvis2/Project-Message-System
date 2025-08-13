@@ -1,1 +1,1 @@
-rootProject.name = "message-system-add-correction"
+rootProject.name = "message-system-add-sharding"
