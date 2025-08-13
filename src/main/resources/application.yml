@@ -3,7 +3,7 @@ server:
 
 spring:
   application:
-    name: message-system-add-correction
+    name: message-system-add-sharding
   datasource:
     source:
       hikari:
@@ -27,9 +27,54 @@ spring:
         maximum-pool-size: 20
         idle-timeout: 60000
         connection-timeout: 30000
+    source-message1:
+      hikari:
+        jdbc-url: jdbc:mysql://localhost:13308/messagesystem
+        username: dev_user
+        password: dev_password
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        pool-name: SourceMessage1ConnectionPool
+        minimum-idle: 10
+        maximum-pool-size: 20
+        idle-timeout: 60000
+        connection-timeout: 30000
+    replica-message1:
+      hikari:
+        jdbc-url: jdbc:mysql://localhost:13309/messagesystem
+        username: dev_user
+        password: dev_password
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        pool-name: ReplicaMessage1ConnectionPool
+        minimum-idle: 10
+        maximum-pool-size: 20
+        idle-timeout: 60000
+        connection-timeout: 30000
+    source-message2:
+      hikari:
+        jdbc-url: jdbc:mysql://localhost:13310/messagesystem
+        username: dev_user
+        password: dev_password
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        pool-name: SourceMessage2ConnectionPool
+        minimum-idle: 10
+        maximum-pool-size: 20
+        idle-timeout: 60000
+        connection-timeout: 30000
+    replica-message2:
+      hikari:
+        jdbc-url: jdbc:mysql://localhost:13311/messagesystem
+        username: dev_user
+        password: dev_password
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        pool-name: ReplicaMessage2ConnectionPool
+        minimum-idle: 10
+        maximum-pool-size: 20
+        idle-timeout: 60000
+        connection-timeout: 30000
+
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: none
     open-in-view: false
     show-sql: true
     properties:
@@ -37,7 +82,7 @@ spring:
         format_sql: true
   sql:
     init:
-      mode: always
+      mode: never
   data:
     redis:
       host: localhost

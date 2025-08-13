@@ -6,7 +6,6 @@ import com.narvi.messagesystem.dto.domain.*
 import com.narvi.messagesystem.entity.ChannelEntity
 import com.narvi.messagesystem.entity.UserChannelEntity
 import com.narvi.messagesystem.repository.ChannelRepository
-import com.narvi.messagesystem.repository.MessageRepository
 import com.narvi.messagesystem.repository.UserChannelRepository
 import jakarta.persistence.EntityNotFoundException
 import mu.KotlinLogging
@@ -19,7 +18,7 @@ class ChannelService(
     private val userChannelRepository: UserChannelRepository,
     private val sessionService: SessionService,
     private val userConnectionService: UserConnectionService,
-    private val messageRepository: MessageRepository,
+    private val messageShardService: MessageShardService,
 ) {
 
     @Transactional(readOnly = true)
@@ -158,8 +157,7 @@ class ChannelService(
             return null to ResultType.NOT_FOUND
         }
 
-        val lastChannelMessageSeqId =
-            messageRepository.findLastMessageSequenceByChannelId(channelId.id)?.let(::MessageSeqId) ?: MessageSeqId(0L)
+        val lastChannelMessageSeqId = messageShardService.findLastMessageSequenceByChannelId(channelId)
 
         // 레디스에 해당 유저가 어떤 Channel 에 참가했는지에 대한 데이터 저장
         return if (sessionService.setActiveChannel(userId, channelId)) {
