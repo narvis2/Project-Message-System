@@ -1,1 +1,1 @@
-rootProject.name = "message-system-add-sharding"
+rootProject.name = "message-system-add-redis-cluster"
