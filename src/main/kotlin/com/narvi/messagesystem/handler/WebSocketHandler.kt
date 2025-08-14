@@ -5,6 +5,7 @@ import com.narvi.messagesystem.dto.domain.UserId
 import com.narvi.messagesystem.dto.websocket.inbound.BaseRequest
 import com.narvi.messagesystem.handler.websocket.RequestDispatcher
 import com.narvi.messagesystem.json.JsonUtil
+import com.narvi.messagesystem.service.SessionService
 import com.narvi.messagesystem.session.WebSocketSessionManager
 import mu.KotlinLogging
 import org.springframework.stereotype.Component
@@ -19,6 +20,7 @@ class WebSocketHandler(
     private val requestDispatcher: RequestDispatcher,
     private val webSocketSessionManager: WebSocketSessionManager,
     private val jsonUtil: JsonUtil,
+    private val sessionService: SessionService,
 ) : TextWebSocketHandler() {
 
     /**
@@ -37,6 +39,7 @@ class WebSocketHandler(
 
         val userId = session.attributes[IdKey.USER_ID.value] as? UserId ?: return
         webSocketSessionManager.putSession(userId, concurrentWebSocketSessionDecorator)
+        sessionService.setOnline(userId, true)
     }
 
     /**
@@ -47,6 +50,8 @@ class WebSocketHandler(
         log.error("Transport Error : [{}] from {}", exception.message, session.id)
         val userId = session.attributes[IdKey.USER_ID.value] as? UserId ?: return
         webSocketSessionManager.closeSession(userId)
+        sessionService.setOnline(userId, false)
+        sessionService.removeActiveChannel(userId)
     }
 
     /**
@@ -56,6 +61,8 @@ class WebSocketHandler(
     override fun afterConnectionClosed(session: WebSocketSession, status: CloseStatus) {
         val userId = session.attributes[IdKey.USER_ID.value] as? UserId ?: return
         webSocketSessionManager.closeSession(userId)
+        sessionService.setOnline(userId, false)
+        sessionService.removeActiveChannel(userId)
     }
 
     /**

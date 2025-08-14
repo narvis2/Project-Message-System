@@ -1,88 +1,10 @@
 server:
   port: 8090
+  id: 100
 
 spring:
   application:
-    name: message-system-add-redis-cluster
-  datasource:
-    source:
-      hikari:
-        jdbc-url: jdbc:mysql://localhost:13306/messagesystem
-        username: dev_user
-        password: dev_password
-        driver-class-name: com.mysql.cj.jdbc.Driver
-        pool-name: SourceConnectionPool
-        minimum-idle: 10
-        maximum-pool-size: 20
-        idle-timeout: 60000
-        connection-timeout: 30000
-    replica:
-      hikari:
-        jdbc-url: jdbc:mysql://localhost:13307/messagesystem
-        username: dev_user
-        password: dev_password
-        driver-class-name: com.mysql.cj.jdbc.Driver
-        pool-name: ReplicaConnectionPool
-        minimum-idle: 10
-        maximum-pool-size: 20
-        idle-timeout: 60000
-        connection-timeout: 30000
-    source-message1:
-      hikari:
-        jdbc-url: jdbc:mysql://localhost:13308/messagesystem
-        username: dev_user
-        password: dev_password
-        driver-class-name: com.mysql.cj.jdbc.Driver
-        pool-name: SourceMessage1ConnectionPool
-        minimum-idle: 10
-        maximum-pool-size: 20
-        idle-timeout: 60000
-        connection-timeout: 30000
-    replica-message1:
-      hikari:
-        jdbc-url: jdbc:mysql://localhost:13309/messagesystem
-        username: dev_user
-        password: dev_password
-        driver-class-name: com.mysql.cj.jdbc.Driver
-        pool-name: ReplicaMessage1ConnectionPool
-        minimum-idle: 10
-        maximum-pool-size: 20
-        idle-timeout: 60000
-        connection-timeout: 30000
-    source-message2:
-      hikari:
-        jdbc-url: jdbc:mysql://localhost:13310/messagesystem
-        username: dev_user
-        password: dev_password
-        driver-class-name: com.mysql.cj.jdbc.Driver
-        pool-name: SourceMessage2ConnectionPool
-        minimum-idle: 10
-        maximum-pool-size: 20
-        idle-timeout: 60000
-        connection-timeout: 30000
-    replica-message2:
-      hikari:
-        jdbc-url: jdbc:mysql://localhost:13311/messagesystem
-        username: dev_user
-        password: dev_password
-        driver-class-name: com.mysql.cj.jdbc.Driver
-        pool-name: ReplicaMessage2ConnectionPool
-        minimum-idle: 10
-        maximum-pool-size: 20
-        idle-timeout: 60000
-        connection-timeout: 30000
-
-  jpa:
-    hibernate:
-      ddl-auto: none
-    open-in-view: false
-    show-sql: true
-    properties:
-      hibernate:
-        format_sql: true
-  sql:
-    init:
-      mode: never
+    name: message-system-connection
   data:
     redis:
       cluster:
@@ -104,12 +26,28 @@ spring:
         delivery.timeout.ms: 10000
         request.timeout.ms: 3000
         retry.backoff.ms: 100
+    consumer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      auto-offset-reset: latest
+      properties:
+        allow.auto.create.topics: false
+        enable.auto.commit: false
+        partition.assignment.strategy: org.apache.kafka.clients.consumer.CooperativeStickyAssignor
 
 message-system:
   kafka:
+    topics:
+      message: message-relay
+      request: message-request
+      push: push-notification
     listeners:
-      push:
-        topic: push-notification
+      listen:
+        prefix-topic: connection-notification
+        prefix-group-id: listen-group
+        concurrency: 3
+        partitions: 5
+        replicationFactor: 3
 
 logging:
   level:

@@ -1,0 +1,14 @@
+package com.narvi.messagesystem.dto.kafka
+
+import com.fasterxml.jackson.annotation.JsonCreator
+import com.fasterxml.jackson.annotation.JsonProperty
+import com.narvi.messagesystem.constant.MessageType
+import com.narvi.messagesystem.dto.domain.Connection
+import com.narvi.messagesystem.dto.domain.UserId
+
+data class FetchConnectionsResponseRecord @JsonCreator constructor(
+    @param:JsonProperty("userId")
+    val userId: UserId,
+    @param:JsonProperty("connections")
+    val connections: List<Connection>
+) : BaseRecord(MessageType.FETCH_CONNECTIONS_RESPONSE)

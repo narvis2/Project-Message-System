@@ -13,8 +13,6 @@ class WebSocketSessionManager {
 
     private val sessions: MutableMap<UserId, WebSocketSession> = ConcurrentHashMap<UserId, WebSocketSession>()
 
-    fun getSessions(): List<WebSocketSession> = sessions.values.toList()
-
     fun getSession(userId: UserId) = sessions[userId]
 
     fun putSession(userId: UserId, session: WebSocketSession) {

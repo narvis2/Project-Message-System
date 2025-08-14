@@ -8,7 +8,6 @@ plugins {
     kotlin("plugin.noarg") version "1.9.25"
     kotlin("plugin.allopen") version "1.9.25"
     kotlin("kapt") version "1.9.25"
-    kotlin("plugin.jpa") version "1.9.25"
 }
 
 group = "com.narvi"
@@ -46,7 +45,6 @@ dependencies {
     // Redis + Session
     implementation("org.springframework.session:spring-session-data-redis")
 
-    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-hibernate6:2.15.0")
 
     implementation("io.github.microutils:kotlin-logging:3.0.5")
@@ -55,7 +53,6 @@ dependencies {
 
     // @ConfigurationProperties 사용
     kapt("org.springframework.boot:spring-boot-configuration-processor")
-    runtimeOnly("com.mysql:mysql-connector-j")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.spockframework:spock-core:2.4-M5-groovy-4.0")

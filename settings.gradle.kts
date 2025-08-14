@@ -1,1 +1,1 @@
-rootProject.name = "message-system-add-redis-cluster"
+rootProject.name = "message-system-connection"

@@ -1,0 +1,17 @@
+package com.narvi.messagesystem.dto.kafka
+
+import com.fasterxml.jackson.annotation.JsonCreator
+import com.fasterxml.jackson.annotation.JsonProperty
+import com.narvi.messagesystem.constant.MessageType
+import com.narvi.messagesystem.dto.domain.ChannelId
+import com.narvi.messagesystem.dto.domain.Message
+import com.narvi.messagesystem.dto.domain.UserId
+
+data class FetchMessagesResponseRecord @JsonCreator constructor(
+    @param:JsonProperty("userId")
+    val userId: UserId,
+    @param:JsonProperty("channelId")
+    val channelId: ChannelId,
+    @param:JsonProperty("messages")
+    val messages: List<Message>,
+) : BaseRecord(MessageType.FETCH_MESSAGES_RESPONSE)
