@@ -2,58 +2,31 @@ package com.narvi.messagesystem.service
 
 import com.narvi.messagesystem.constant.IdKey
 import com.narvi.messagesystem.constant.KeyPrefix
-import com.narvi.messagesystem.dto.domain.ChannelId
 import com.narvi.messagesystem.dto.domain.UserId
+import com.narvi.messagesystem.kafka.ListenTopicCreator
 import mu.KotlinLogging
 import org.springframework.data.redis.core.StringRedisTemplate
 import org.springframework.session.Session
 import org.springframework.session.SessionRepository
 import org.springframework.stereotype.Service
 import java.time.Instant
-import java.util.concurrent.TimeUnit
 
 @Service
 class SessionService(
     private val httpSessionRepository: SessionRepository<out Session>,
     private val stringRedisTemplate: StringRedisTemplate,
+    private val listenTopicCreator: ListenTopicCreator,
+    private val cacheService: CacheService,
 ) {
 
     private val TTL: Long = 300
 
-    fun getOnlineParticipantUserIds(channelId: ChannelId, userIds: List<UserId>): List<UserId> {
-        val channelIdKeys = userIds.stream().map { userId: UserId -> this.buildChannelIdKey(userId) }.toList()
-        try {
-            val channelIds = stringRedisTemplate.opsForValue().multiGet(channelIdKeys)
-
-            if (channelIds != null) {
-                val onlineParticipantUserIds: MutableList<UserId> = ArrayList(userIds.size)
-                val chId: String = channelId.id.toString()
-
-                for (idx in userIds.indices) {
-                    val value = channelIds[idx]
-                    if (value != null && value == chId) {
-                        onlineParticipantUserIds.add(userIds[idx])
-                    }
-                }
-
-                return onlineParticipantUserIds
-            }
-        } catch (ex: Exception) {
-            log.error("Redis mget failed. key: {}, cause: {}", channelIdKeys, ex.message)
-        }
-
-        return emptyList()
-    }
-
-    fun setActiveChannel(userId: UserId, channelId: ChannelId): Boolean {
-        val channelIdKey = buildChannelIdKey(userId)
-
-        return try {
-            stringRedisTemplate.opsForValue().set(channelIdKey, channelId.id.toString(), TTL, TimeUnit.SECONDS)
-            true
-        } catch (ex: Exception) {
-            log.error("Redis set failed. key: {}, channelId: {}", channelIdKey, channelId)
-            false
+    fun setOnline(userId: UserId, status: Boolean) {
+        val key = buildUserLocationKey(userId)
+        if (status) {
+            cacheService.set(key, listenTopicCreator.getListenTopic(), TTL)
+        } else {
+            cacheService.delete(key)
         }
     }
 
@@ -70,21 +43,23 @@ class SessionService(
     }
 
     fun refreshTTL(userId: UserId, httpSessionId: String) {
-        val channelIdKey = buildChannelIdKey(userId)
-
         try {
             val httpSession = httpSessionRepository.findById(httpSessionId)
             if (httpSession != null) {
                 httpSession.lastAccessedTime = Instant.now()
-                stringRedisTemplate.expire(channelIdKey, TTL, TimeUnit.SECONDS)
+                cacheService.expire(buildChannelIdKey(userId), TTL)
+                cacheService.expire(buildUserLocationKey(userId), TTL)
             }
         } catch (ex: Exception) {
-            log.error("Redis expire failed. key: {}", channelIdKey)
+            log.error("Redis find failed. httpSessionId: {}, cause: {}", httpSessionId, ex.message)
         }
     }
 
     private fun buildChannelIdKey(userId: UserId): String =
         "%s:%d:%s".format(KeyPrefix.USER, userId.id, IdKey.CHANNEL_ID.value)
+
+    private fun buildUserLocationKey(userId: UserId): String =
+        "%s:%d:%s".format(KeyPrefix.USER_SESSION, userId.id.toString())
 
     companion object {
         private val log = KotlinLogging.logger {}
